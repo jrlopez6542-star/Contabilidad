@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 function parseWidth(req: NextRequest): ThermalWidthMm {
   const w = req.nextUrl.searchParams.get("width");
-  return w === "58" ? 58 : 80;
+  return w === "80" ? 80 : 58;
 }
 
 export async function GET(

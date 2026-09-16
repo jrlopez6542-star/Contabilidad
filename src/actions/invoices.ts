@@ -75,10 +75,6 @@ export async function createInvoiceAction(formData: FormData) {
         }
       }
 
-      let stockCrossings: StockCrossEvent[] = [];
-      if (issueNow) {
-        stockCrossings = await decreaseStockForItems(tx, computed);
-      }
       const number = await allocateInvoiceNumberInTx(tx);
       const created = await tx.invoice.create({
         data: {
@@ -106,6 +102,18 @@ export async function createInvoiceAction(formData: FormData) {
           },
         },
       });
+
+      let stockCrossings: StockCrossEvent[] = [];
+      if (issueNow) {
+        stockCrossings = await decreaseStockForItems(tx, computed, {
+          reason: `Venta ${number}`,
+          refType: "invoice",
+          refId: created.id,
+          refNumber: number,
+          userId: session.id,
+          userEmail: session.email,
+        });
+      }
 
       if (issueNow && markPaid && paymentMethod && total > 0) {
         await tx.payment.create({
@@ -141,6 +149,7 @@ export async function createInvoiceAction(formData: FormData) {
 
     revalidatePath("/invoices");
     revalidatePath("/products");
+    revalidatePath("/kardex");
     revalidatePath("/customers");
     revalidatePath("/payments");
     revalidatePath("/dashboard");
@@ -300,7 +309,14 @@ export async function issueInvoiceAction(
   let stockCrossings: StockCrossEvent[] = [];
   try {
     stockCrossings = await prisma.$transaction(async (tx) => {
-      const crossings = await decreaseStockForItems(tx, invoice.items);
+      const crossings = await decreaseStockForItems(tx, invoice.items, {
+        reason: `Venta ${invoice.number}`,
+        refType: "invoice",
+        refId: invoice.id,
+        refNumber: invoice.number,
+        userId: session.id,
+        userEmail: session.email,
+      });
       await tx.invoice.update({
         where: { id },
         data: {
@@ -342,6 +358,7 @@ export async function issueInvoiceAction(
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
   revalidatePath("/products");
+  revalidatePath("/kardex");
   revalidatePath("/payments");
   revalidatePath("/dashboard");
   return { ok: true };
@@ -369,7 +386,14 @@ export async function voidInvoiceAction(id: string) {
 
   // issued and paid both deducted stock on emit — restore it.
   await prisma.$transaction(async (tx) => {
-    await restoreStockForItems(tx, invoice.items);
+    await restoreStockForItems(tx, invoice.items, {
+      reason: `Anulación ${invoice.number}`,
+      refType: "invoice",
+      refId: invoice.id,
+      refNumber: invoice.number,
+      userId: session.id,
+      userEmail: session.email,
+    });
     // Reverse payment status: remove payments so the voided invoice has no paid amounts
     if (invoice.payments.length > 0) {
       await tx.payment.deleteMany({ where: { invoiceId: id } });
@@ -391,6 +415,7 @@ export async function voidInvoiceAction(id: string) {
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
   revalidatePath("/products");
+  revalidatePath("/kardex");
   revalidatePath("/payments");
   revalidatePath("/dashboard");
   return { ok: true };

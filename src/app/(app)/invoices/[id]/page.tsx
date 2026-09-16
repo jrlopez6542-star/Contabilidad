@@ -17,7 +17,8 @@ import {
   LinkButton,
   PageHeader,
   Table,
-} from "@/components/ui";
+} from "@/components/ui"
+import { PrintPdfTicketButton } from "@/components/thermal/print-pdf-ticket-button";
 import { InvoiceActions } from "./actions";
 import { PaymentQuickForm } from "./payment-form";
 import { DraftInvoiceEditor } from "./edit-draft";
@@ -73,22 +74,9 @@ export default async function InvoiceDetailPage({
             >
               Descargar PDF
             </LinkButton>
-            <LinkButton
-              href={`/invoices/${invoice.id}/ticket`}
-              variant="secondary"
-              hard
-              className="w-full sm:w-auto"
-            >
-              Ticket térmico
-            </LinkButton>
-            <LinkButton
-              href={`/invoices/${invoice.id}/ticket/print`}
-              variant="secondary"
-              hard
-              className="w-full sm:w-auto"
-            >
-              Imprimir ticket
-            </LinkButton>
+            <PrintPdfTicketButton
+              ticketHref={`/invoices/${invoice.id}/ticket`}
+            />
             <LinkButton href="/invoices" variant="ghost" className="w-full sm:w-auto">
               Volver
             </LinkButton>
@@ -256,6 +244,8 @@ export default async function InvoiceDetailPage({
             name: p.name,
             price: p.price,
             ivaRate: p.ivaRate,
+            stock: p.stock,
+            trackStock: p.trackStock,
           }))}
         />
       )}

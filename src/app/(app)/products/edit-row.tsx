@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { adjustStockAction, updateProductAction } from "@/actions/products";
 import { formatCOP } from "@/lib/format";
@@ -49,72 +50,85 @@ export function ProductEditRow({
     }
   }
 
-  const low =
-    product.trackStock && product.stock <= product.minStock;
+  const low = product.trackStock && product.stock <= product.minStock;
 
   return (
     <>
       <tr>
-        <td className="px-3 py-3 sm:px-4 font-mono text-xs">{product.sku}</td>
-        <td className="px-3 py-3 sm:px-4">{product.name}</td>
-        <td className="px-3 py-3 sm:px-4 text-right">{formatCOP(product.price)}</td>
-        <td className="px-3 py-3 sm:px-4 text-right">{product.ivaRate}%</td>
-        <td className="px-3 py-3 sm:px-4 text-right">
+        <td className="px-3 py-2.5 font-mono text-xs sm:px-4">{product.sku}</td>
+        <td className="px-3 py-2.5 sm:px-4">{product.name}</td>
+        <td className="px-3 py-2.5 text-right sm:px-4">{formatCOP(product.price)}</td>
+        <td className="px-3 py-2.5 text-right sm:px-4">{product.ivaRate}%</td>
+        <td className="px-3 py-2.5 text-right sm:px-4">
           {product.trackStock ? (
-            <span className={low ? "font-semibold text-gold" : ""}>
-              {product.stock}
+            <span className="inline-flex items-center justify-end gap-1.5">
+              <span className={low ? "font-semibold text-gold" : ""}>
+                {product.stock}
+              </span>
               {low && (
-                <span className="ml-1 text-xs text-gold">(bajo)</span>
+                <Badge className="bg-gold-50 text-amber-900 dark:bg-gold/15 dark:text-gold-100">
+                  bajo
+                </Badge>
               )}
             </span>
           ) : (
-            <span className="text-slate-400">N/A</span>
+            <span className="text-slate-400 dark:text-brand-200/60">N/A</span>
           )}
         </td>
-        <td className="px-3 py-3 sm:px-4">
+        <td className="px-3 py-2.5 sm:px-4">
           <Badge
             className={
               product.active
-                ? "bg-brand-100 text-brand"
-                : "bg-slate-100 text-slate-600"
+                ? "bg-brand-100 text-brand dark:bg-brand-800 dark:text-brand-100"
+                : "bg-slate-100 text-slate-600 dark:bg-brand-800/50 dark:text-brand-200"
             }
           >
             {product.active ? "Activo" : "Inactivo"}
           </Badge>
         </td>
-        {canWrite && (
-          <td className="space-x-3 px-3 py-3 sm:px-4 text-right">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen((v) => !v);
-                setStockOpen(false);
-                setError(null);
-              }}
-              className="text-xs font-medium text-brand hover:underline"
+        <td className="space-x-2 px-3 py-2.5 text-right sm:px-4">
+          {product.trackStock && (
+            <Link
+              href={`/kardex?productId=${product.id}`}
+              className="text-xs font-medium text-slate-500 hover:text-brand hover:underline dark:text-brand-200 dark:hover:text-brand-100"
             >
-              {open ? "Cerrar" : "Editar"}
-            </button>
-            {product.trackStock && (
+              Kardex
+            </Link>
+          )}
+          {canWrite && (
+            <>
               <button
                 type="button"
                 onClick={() => {
-                  setStockOpen((v) => !v);
-                  setOpen(false);
-                  setStockMsg(null);
+                  setOpen((v) => !v);
+                  setStockOpen(false);
+                  setError(null);
                 }}
-                className="text-xs font-medium text-slate-600 hover:underline"
+                className="text-xs font-medium text-brand hover:underline dark:text-brand-100"
               >
-                Ajustar stock
+                {open ? "Cerrar" : "Editar"}
               </button>
-            )}
-            <ToggleProductButton id={product.id} active={product.active} />
-          </td>
-        )}
+              {product.trackStock && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStockOpen((v) => !v);
+                    setOpen(false);
+                    setStockMsg(null);
+                  }}
+                  className="text-xs font-medium text-slate-600 hover:underline dark:text-brand-200"
+                >
+                  Ajustar
+                </button>
+              )}
+              <ToggleProductButton id={product.id} active={product.active} />
+            </>
+          )}
+        </td>
       </tr>
       {canWrite && open && (
         <tr>
-          <td colSpan={7} className="bg-slate-50 px-3 py-4 sm:px-4">
+          <td colSpan={7} className="bg-slate-50 px-3 py-3 dark:bg-brand-900/30 sm:px-4">
             <form action={onSubmit} className="grid gap-3 sm:grid-cols-2">
               <Input label="SKU" name="sku" required defaultValue={product.sku} />
               <Input label="Nombre" name="name" required defaultValue={product.name} />
@@ -143,7 +157,7 @@ export function ProductEditRow({
                 step={0.01}
                 defaultValue={product.minStock}
               />
-              <label className="flex items-center gap-2 text-sm text-slate-700">
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-brand-100">
                 <input
                   type="checkbox"
                   name="trackStock"
@@ -152,7 +166,7 @@ export function ProductEditRow({
                 />
                 Controlar inventario
               </label>
-              <label className="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-brand-100 sm:col-span-2">
                 <input
                   type="checkbox"
                   name="active"
@@ -173,8 +187,8 @@ export function ProductEditRow({
       )}
       {canWrite && stockOpen && (
         <tr>
-          <td colSpan={7} className="bg-gold-50 px-3 py-4 sm:px-4">
-            <form action={onAdjust} className="grid max-w-lg gap-3 sm:grid-cols-3">
+          <td colSpan={7} className="bg-gold-50 px-3 py-3 dark:bg-gold/10 sm:px-4">
+            <form action={onAdjust} className="grid max-w-xl gap-3 sm:grid-cols-4">
               <Select label="Modo" name="mode" defaultValue="set">
                 <option value="set">Establecer valor</option>
                 <option value="delta">Sumar / restar</option>
@@ -187,11 +201,19 @@ export function ProductEditRow({
                 required
                 defaultValue={product.stock}
               />
+              <Input
+                label="Motivo"
+                name="notes"
+                placeholder="Opcional"
+                className="sm:col-span-1"
+              />
               <div className="flex items-end">
                 <Button type="submit">Aplicar</Button>
               </div>
               {stockMsg && (
-                <p className="text-sm text-slate-700 sm:col-span-3">{stockMsg}</p>
+                <p className="text-sm text-slate-700 dark:text-brand-100 sm:col-span-4">
+                  {stockMsg}
+                </p>
               )}
             </form>
           </td>

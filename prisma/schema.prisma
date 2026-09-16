@@ -41,19 +41,44 @@ model Company {
 }
 
 model Product {
-  id         String        @id @default(cuid())
-  sku        String        @unique
+  id         String          @id @default(cuid())
+  sku        String          @unique
   name       String
   price      Float // COP sin IVA
-  ivaRate    Float         @default(19) // porcentaje
-  stock      Float         @default(0)
-  minStock   Float         @default(5)
-  trackStock Boolean       @default(true)
-  active     Boolean       @default(true)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  ivaRate    Float           @default(19) // porcentaje
+  stock      Float           @default(0)
+  minStock   Float           @default(5)
+  trackStock Boolean         @default(true)
+  active     Boolean         @default(true)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
   items      InvoiceItem[]
   quoteItems QuoteItem[]
+  movements  StockMovement[]
+}
+
+
+model StockMovement {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  /// in | out | adjust
+  type        String
+  /// Always positive; direction comes from type
+  quantity    Float
+  stockBefore Float
+  stockAfter  Float
+  reason      String   @default("")
+  /// invoice | adjust | manual
+  refType     String   @default("")
+  refId       String   @default("")
+  refNumber   String   @default("")
+  userId      String?
+  userEmail   String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
 }
 
 model Customer {

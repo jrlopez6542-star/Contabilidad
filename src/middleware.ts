@@ -110,6 +110,9 @@ function permissionForPath(pathname: string): string | null {
 function isStaticPublicAsset(pathname: string): boolean {
   return (
     pathname.startsWith("/uploads/") ||
+    pathname.startsWith("/icons/") ||
+    pathname === "/sw.js" ||
+    pathname === "/manifest.webmanifest" ||
     pathname === "/logo-bunuelandia.png" ||
     pathname === "/logo-bunuelandia-sidebar.png" ||
     pathname === "/logo-bunuelandia-header-dark.png" ||
@@ -187,6 +190,6 @@ export const config = {
   // Skip Next internals, favicon, common static assets, and /uploads.
   // forgot/reset stay in the matcher so isPublic can allow them without auth.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|uploads/|.*\\.(?:png|jpe?g|webp|gif|svg|ico|txt|xml|webmanifest)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|uploads/|sw\.js|icons/|.*\\.(?:png|jpe?g|webp|gif|svg|ico|txt|xml|webmanifest)$).*)",
   ],
 };

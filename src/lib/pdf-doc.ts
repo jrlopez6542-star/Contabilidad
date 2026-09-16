@@ -325,7 +325,7 @@ export type ThermalWidthMm = 58 | 80;
 
 /**
  * Compact monochrome ticket for 58/80mm thermal printers.
- * Default width 80mm (~227 pt). No cream header, no DIAN disclaimer.
+ * Default width 58mm (~164 pt). No cream header, no DIAN disclaimer.
  */
 export async function buildThermalTicketPdf(opts: {
   title: string;
@@ -340,12 +340,12 @@ export async function buildThermalTicketPdf(opts: {
   total: number;
   notes?: string;
   paymentMethod?: string | null;
-  /** Paper width in mm; default 80. */
+  /** Paper width in mm; default 58. */
   widthMm?: ThermalWidthMm | number;
   extraLine?: string;
 }): Promise<Buffer> {
   const widthMm =
-    opts.widthMm === 58 || Number(opts.widthMm) === 58 ? 58 : 80;
+    opts.widthMm === 80 || Number(opts.widthMm) === 80 ? 80 : 58;
   const pageWidth = Math.round(mmToPt(widthMm)); // ~164 or ~227
   const margin = widthMm === 58 ? 8 : 10;
   const contentWidth = pageWidth - margin * 2;

@@ -90,6 +90,7 @@ export async function adjustStockAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const mode = String(formData.get("mode") || "set");
   const value = Number(formData.get("value") || 0);
+  const notes = String(formData.get("notes") || "").trim();
   if (!id) return { error: "Producto inválido." };
 
   const product = await prisma.product.findUnique({ where: { id } });
@@ -98,16 +99,39 @@ export async function adjustStockAction(formData: FormData) {
   let newStock = mode === "delta" ? product.stock + value : value;
   if (newStock < 0) newStock = 0;
 
-  await prisma.product.update({
-    where: { id },
-    data: { stock: newStock },
+  const previousStock = product.stock;
+  const delta = newStock - previousStock;
+  const quantity = Math.abs(delta);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.product.update({
+      where: { id },
+      data: { stock: newStock },
+    });
+    if (quantity > 0) {
+      await tx.stockMovement.create({
+        data: {
+          productId: id,
+          type: "adjust",
+          quantity,
+          stockBefore: previousStock,
+          stockAfter: newStock,
+          reason: notes || `Ajuste manual ${product.sku}`,
+          refType: "adjust",
+          refId: "",
+          refNumber: "",
+          userId: session.id,
+          userEmail: session.email,
+        },
+      });
+    }
   });
   await writeAudit(
     session,
     "adjust",
     "stock",
     id,
-    `Ajuste stock ${product.sku}: ${product.stock} → ${newStock}`
+    `Ajuste stock ${product.sku}: ${previousStock} → ${newStock}${notes ? ` (${notes})` : ""}`
   );
   // Soft-fail email if stock crossed minStock (threshold dedupe).
   if (product.trackStock) {
@@ -117,7 +141,7 @@ export async function adjustStockAction(formData: FormData) {
           productId: product.id,
           sku: product.sku,
           name: product.name,
-          previousStock: product.stock,
+          previousStock,
           newStock,
           minStock: product.minStock,
         },
@@ -127,6 +151,7 @@ export async function adjustStockAction(formData: FormData) {
     }
   }
   revalidatePath("/products");
+  revalidatePath("/kardex");
   revalidatePath("/dashboard");
   return { ok: true };
 }

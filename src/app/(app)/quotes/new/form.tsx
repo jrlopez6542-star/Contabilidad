@@ -12,6 +12,8 @@ type Product = {
   name: string;
   price: number;
   ivaRate: number;
+  stock: number;
+  trackStock: boolean;
 };
 
 type Line = {
@@ -160,83 +162,101 @@ export function QuoteForm({
           </Button>
         </div>
         <div className="space-y-4">
-          {lines.map((l) => (
-            <div
-              key={l.key}
-              className="grid gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-brand-200/20 dark:bg-brand-900/45 md:grid-cols-12"
-            >
-              <div className="md:col-span-3">
-                <Select
-                  label="Producto"
-                  value={l.productId}
-                  onChange={(e) => onProductChange(l.key, e.target.value)}
-                >
-                  <option value="">Manual…</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.sku} — {p.name}
-                    </option>
-                  ))}
-                </Select>
+          {lines.map((l) => {
+            const selected = products.find((p) => p.id === l.productId);
+            const overStock =
+              selected?.trackStock && l.quantity > selected.stock;
+            return (
+              <div
+                key={l.key}
+                className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-brand-200/20 dark:bg-brand-900/45"
+              >
+                <div className="grid gap-3 md:grid-cols-12">
+                  <div className="md:col-span-3">
+                    <Select
+                      label="Producto"
+                      value={l.productId}
+                      onChange={(e) => onProductChange(l.key, e.target.value)}
+                    >
+                      <option value="">Manual…</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.sku} — {p.name}{" "}
+                          {p.trackStock
+                            ? `(stock: ${p.stock})`
+                            : "(sin control)"}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="md:col-span-3">
+                    <Input
+                      label="Descripción"
+                      value={l.description}
+                      onChange={(e) =>
+                        updateLine(l.key, { description: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <Input
+                      label="Cant."
+                      type="number"
+                      min={1}
+                      step={1}
+                      inputMode="numeric"
+                      value={l.quantity}
+                      onChange={(e) => {
+                        const n = Math.max(
+                          1,
+                          Math.round(Number(e.target.value) || 1)
+                        );
+                        updateLine(l.key, { quantity: n });
+                      }}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Input
+                      label="Precio unit."
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={l.unitPrice}
+                      onChange={(e) =>
+                        updateLine(l.key, { unitPrice: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <Input
+                      label="IVA %"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={l.ivaRate}
+                      onChange={(e) =>
+                        updateLine(l.key, { ivaRate: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-end md:col-span-2">
+                    <button
+                      type="button"
+                      onClick={() => removeLine(l.key)}
+                      className="mb-1 text-xs text-jam hover:underline"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+                {selected && overStock ? (
+                  <p className="mt-2 text-xs text-amber-700 dark:text-gold">
+                    Solo hay {selected.stock} en stock
+                  </p>
+                ) : null}
               </div>
-              <div className="md:col-span-3">
-                <Input
-                  label="Descripción"
-                  value={l.description}
-                  onChange={(e) =>
-                    updateLine(l.key, { description: e.target.value })
-                  }
-                />
-              </div>
-              <div className="md:col-span-1">
-                <Input
-                  label="Cant."
-                  type="number"
-                  min={1}
-                  step={1}
-                  inputMode="numeric"
-                  value={l.quantity}
-                  onChange={(e) => {
-                    const n = Math.max(1, Math.round(Number(e.target.value) || 1));
-                    updateLine(l.key, { quantity: n });
-                  }}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Input
-                  label="Precio unit."
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={l.unitPrice}
-                  onChange={(e) =>
-                    updateLine(l.key, { unitPrice: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="md:col-span-1">
-                <Input
-                  label="IVA %"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={l.ivaRate}
-                  onChange={(e) =>
-                    updateLine(l.key, { ivaRate: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="flex items-end md:col-span-2">
-                <button
-                  type="button"
-                  onClick={() => removeLine(l.key)}
-                  className="mb-1 text-xs text-jam hover:underline"
-                >
-                  Quitar
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-6 flex flex-col items-end gap-1 text-sm">

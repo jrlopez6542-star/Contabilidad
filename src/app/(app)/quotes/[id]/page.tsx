@@ -14,7 +14,8 @@ import {
   LinkButton,
   PageHeader,
   Table,
-} from "@/components/ui";
+} from "@/components/ui"
+import { PrintPdfTicketButton } from "@/components/thermal/print-pdf-ticket-button";
 import { QuoteActions } from "./actions";
 
 export default async function QuoteDetailPage({
@@ -42,16 +43,9 @@ export default async function QuoteDetailPage({
             <LinkButton href={`/quotes/${quote.id}/pdf`} variant="secondary" hard>
               Descargar PDF
             </LinkButton>
-            <LinkButton href={`/quotes/${quote.id}/ticket`} variant="secondary" hard>
-              Ticket térmico
-            </LinkButton>
-            <LinkButton
-              href={`/quotes/${quote.id}/ticket/print`}
-              variant="secondary"
-              hard
-            >
-              Imprimir ticket
-            </LinkButton>
+            <PrintPdfTicketButton
+              ticketHref={`/quotes/${quote.id}/ticket`}
+            />
             <LinkButton href="/quotes" variant="ghost">
               Volver
             </LinkButton>

@@ -1,60 +1,60 @@
-import { notFound, redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
-import { can } from "@/lib/roles";
-import { formatDate } from "@/lib/format";
-import { ThermalReceipt } from "@/components/thermal/receipt";
-import { ThermalPrintActions } from "@/components/thermal/print-actions";
+"use client";
 
-export default async function QuoteTicketPrintPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams?: { width?: string; autoprint?: string };
-}) {
-  const session = await getSession();
-  if (!session) redirect("/login");
-  if (!can(session.role, "quotes:read")) redirect("/dashboard");
+import { useEffect } from "react";
+import { useParams } from "next/navigation";
 
-  const widthMm = searchParams?.width === "58" ? 58 : 80;
-  const autoPrint = searchParams?.autoprint !== "0";
+/** Prints the same thermal PDF as /quotes/[id]/ticket */
+export default function TicketPrintPage() {
+  const params = useParams();
+  const id = String(params?.id || "");
 
-  const [quote, company] = await Promise.all([
-    prisma.quote.findUnique({
-      where: { id: params.id },
-      include: { customer: true, items: true },
-    }),
-    prisma.company.findFirst(),
-  ]);
+  useEffect(() => {
+    if (!id) return;
+    let objectUrl: string | null = null;
+    let iframe: HTMLIFrameElement | null = null;
+    let cancelled = false;
 
-  if (!quote) notFound();
+    (async () => {
+      try {
+        const res = await fetch(`/quotes/${id}/ticket`, {
+          credentials: "same-origin",
+        });
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        const blob = await res.blob();
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(
+          new Blob([blob], { type: "application/pdf" })
+        );
+        iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.inset = "0";
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "0";
+        iframe.src = objectUrl;
+        document.body.appendChild(iframe);
+        await new Promise<void>((resolve) => {
+          iframe!.onload = () => resolve();
+        });
+        await new Promise((r) => setTimeout(r, 500));
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (e) {
+        console.error(e);
+        window.location.href = `/quotes/${id}/ticket`;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [id]);
 
   return (
-    <>
-      <ThermalPrintActions
-        backHref={`/quotes/${quote.id}`}
-        autoPrint={autoPrint}
-      />
-      <ThermalReceipt
-        title="COTIZACIÓN"
-        number={quote.number}
-        dateLabel="Fecha"
-        dateValue={quote.createdAt}
-        company={company}
-        party={quote.customer}
-        items={quote.items}
-        subtotal={quote.subtotal}
-        ivaTotal={quote.ivaTotal}
-        total={quote.total}
-        notes={quote.notes}
-        widthMm={widthMm}
-        extraLine={
-          quote.validUntil
-            ? `Válida hasta: ${formatDate(quote.validUntil)}`
-            : null
-        }
-      />
-    </>
+    <p style={{ fontFamily: "system-ui", padding: 16 }}>
+      Preparando ticket PDF para imprimir…
+    </p>
   );
 }
