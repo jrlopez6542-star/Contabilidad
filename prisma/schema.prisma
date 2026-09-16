@@ -1,0 +1,110 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  // Prisma CLI only accepts file: URLs. For Turso at runtime, set DATABASE_URL to
+  // libsql://... (or https://...) and the app uses @prisma/adapter-libsql.
+  // Keep file:./dev.db for local CLI (generate / db push / seed).
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("vendedor") // admin | vendedor | contador
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Company {
+  id                String @id @default(cuid())
+  name              String // razón social
+  nit               String
+  address           String @default("")
+  phone             String @default("")
+  email             String @default("")
+  invoicePrefix     String @default("FV")
+  nextInvoiceNumber Int    @default(1)
+}
+
+model Product {
+  id        String        @id @default(cuid())
+  sku       String        @unique
+  name      String
+  price     Float // COP sin IVA
+  ivaRate   Float         @default(19) // porcentaje
+  active    Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  items     InvoiceItem[]
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  nit       String // NIT o CC
+  email     String    @default("")
+  phone     String    @default("")
+  address   String    @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  invoices  Invoice[]
+}
+
+model Invoice {
+  id         String        @id @default(cuid())
+  number     String        @unique // e.g. FV-0001
+  customerId String
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  status     String        @default("draft") // draft|issued|paid|void
+  subtotal   Float         @default(0)
+  ivaTotal   Float         @default(0)
+  total      Float         @default(0)
+  notes      String        @default("")
+  issuedAt   DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  items      InvoiceItem[]
+  payments   Payment[]
+}
+
+model InvoiceItem {
+  id           String   @id @default(cuid())
+  invoiceId    String
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id])
+  description  String
+  quantity     Float
+  unitPrice    Float
+  ivaRate      Float    @default(19)
+  lineSubtotal Float
+  lineIva      Float
+  lineTotal    Float
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount    Float
+  method    String   @default("transferencia") // efectivo|transferencia|tarjeta|otro
+  paidAt    DateTime @default(now())
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model Expense {
+  id        String   @id @default(cuid())
+  date      DateTime
+  category  String
+  amount    Float
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+}
