@@ -8,6 +8,7 @@ import {
   updateUserAction,
 } from "@/actions/users";
 import { Button, Input, Select } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 
 type User = {
@@ -95,10 +96,9 @@ export function UserEditForm({
 
       <form action={onPassword} className="flex flex-wrap items-end gap-3">
         <div className="min-w-[200px] flex-1">
-          <Input
+          <PasswordInput
             label="Nueva contraseña"
             name="password"
-            type="password"
             required
             minLength={6}
           />

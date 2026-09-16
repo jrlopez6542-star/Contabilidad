@@ -4,7 +4,8 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { resetPasswordAction } from "@/actions/password-reset";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Card } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import { CompanyLogo } from "@/components/company-logo";
 import { DEFAULT_COMPANY_NAME, DEFAULT_LOGO } from "@/lib/branding";
 import { ViewModeToggle } from "@/components/view-mode-toggle";
@@ -66,18 +67,16 @@ function ResetPasswordForm() {
   return (
     <form action={onSubmit} className="space-y-4">
       <input type="hidden" name="token" value={token} />
-      <Input
+      <PasswordInput
         label="Nueva contraseña"
         name="password"
-        type="password"
         required
         minLength={6}
         autoComplete="new-password"
       />
-      <Input
+      <PasswordInput
         label="Confirmar contraseña"
         name="confirm"
-        type="password"
         required
         minLength={6}
         autoComplete="new-password"

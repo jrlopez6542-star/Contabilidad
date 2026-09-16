@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createUserAction } from "@/actions/users";
 import { Button, Input, Select } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 
 export function UserCreateForm({
@@ -39,10 +40,9 @@ export function UserCreateForm({
           </option>
         ))}
       </Select>
-      <Input
+      <PasswordInput
         label="Contraseña"
         name="password"
-        type="password"
         required
         minLength={6}
       />

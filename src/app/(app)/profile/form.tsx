@@ -6,6 +6,7 @@ import {
   updateOwnProfileAction,
 } from "@/actions/users";
 import { Button, Input } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 
 export function ProfileForm({
@@ -71,25 +72,22 @@ export function ProfileForm({
         className="space-y-4 border-t border-slate-200 pt-6"
       >
         <h2 className="text-sm font-semibold text-slate-900">Cambiar contraseña</h2>
-        <Input
+        <PasswordInput
           label="Contraseña actual"
           name="currentPassword"
-          type="password"
           required
           autoComplete="current-password"
         />
-        <Input
+        <PasswordInput
           label="Nueva contraseña"
           name="password"
-          type="password"
           required
           minLength={6}
           autoComplete="new-password"
         />
-        <Input
+        <PasswordInput
           label="Confirmar nueva contraseña"
           name="confirmPassword"
-          type="password"
           required
           minLength={6}
           autoComplete="new-password"

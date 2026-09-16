@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { loginAction } from "@/actions/auth";
 import { Button, Card, Input } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import { CompanyLogo } from "@/components/company-logo";
 import {
   companyLogoSrc,
@@ -79,10 +80,9 @@ export function LoginForm({
               required
               autoComplete="username"
             />
-            <Input
+            <PasswordInput
               label="Contraseña"
               name="password"
-              type="password"
               required
               autoComplete="current-password"
             />
