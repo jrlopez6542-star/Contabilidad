@@ -181,6 +181,18 @@ export function InvoiceForm({
     });
   }
 
+  const scanSuggestions = useMemo(() => {
+    const q = scanQuery.trim().toLowerCase();
+    if (!q) return [] as Product[];
+    return products
+      .filter(
+        (p) =>
+          p.sku.toLowerCase().includes(q) ||
+          p.name.toLowerCase().includes(q)
+      )
+      .slice(0, 8);
+  }, [scanQuery, products]);
+
   function matchProduct(query: string): {
     product: Product | null;
     ambiguous: Product[];
@@ -191,6 +203,18 @@ export function InvoiceForm({
 
     const exactSku = products.find((p) => p.sku.toLowerCase() === lower);
     if (exactSku) return { product: exactSku, ambiguous: [] };
+
+    const exactName = products.find((p) => p.name.toLowerCase() === lower);
+    if (exactName) return { product: exactName, ambiguous: [] };
+
+    if (/^\d+$/.test(q)) {
+      const skuPrefix = products.filter((p) =>
+        p.sku.toLowerCase().startsWith(lower)
+      );
+      if (skuPrefix.length === 1) return { product: skuPrefix[0], ambiguous: [] };
+      if (skuPrefix.length > 1) return { product: null, ambiguous: skuPrefix };
+      return { product: null, ambiguous: [] };
+    }
 
     const substr = products.filter(
       (p) =>
@@ -251,6 +275,13 @@ export function InvoiceForm({
     }
   }
 
+  function pickScanSuggestion(p: Product) {
+    addOrIncrementProduct(p);
+    setScanQuery("");
+    setScanHint(null);
+    requestAnimationFrame(() => scanRef.current?.focus());
+  }
+
   function onScanSubmit() {
     const q = scanQuery.trim();
     if (!q) return;
@@ -262,12 +293,7 @@ export function InvoiceForm({
       return;
     }
     if (ambiguous.length > 0) {
-      const top = ambiguous.slice(0, 5);
-      setScanHint(
-        `Varios productos: ${top
-          .map((p) => `${p.sku} — ${p.name}`)
-          .join("; ")}${ambiguous.length > 5 ? "…" : ""}`
-      );
+      setScanHint("Varias coincidencias — elige abajo");
       return;
     }
     setScanHint(`Sin coincidencia para «${q}»`);
@@ -437,23 +463,52 @@ export function InvoiceForm({
         </div>
 
         <div className="mb-4 space-y-2">
-          <Input
-            ref={scanRef}
-            label="SKU / buscar producto"
-            value={scanQuery}
-            onChange={(e) => {
-              setScanQuery(e.target.value);
-              setScanHint(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                onScanSubmit();
-              }
-            }}
-            placeholder="SKU o nombre + Enter"
-            autoComplete="off"
-          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1">
+              <Input
+                ref={scanRef}
+                label="SKU / buscar producto"
+                value={scanQuery}
+                onChange={(e) => {
+                  setScanQuery(e.target.value);
+                  setScanHint(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onScanSubmit();
+                  }
+                }}
+                placeholder="SKU o nombre"
+                autoComplete="off"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full shrink-0 sm:w-auto"
+              onClick={onScanSubmit}
+            >
+              Agregar
+            </Button>
+          </div>
+          <p className="text-xs text-slate-500">
+            Ejemplos: 001, 002, 003 o parte del nombre. Enter o Agregar.
+          </p>
+          {scanSuggestions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {scanSuggestions.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => pickScanSuggestion(p)}
+                  className="min-h-11 touch-manipulation rounded-xl border border-brand/20 bg-surface px-3 py-2 text-left text-sm font-medium text-brand hover:bg-brand-50 dark:border-brand-200/25 dark:text-brand-100 dark:hover:bg-brand-800 sm:min-h-10"
+                >
+                  {p.sku} — {p.name}
+                </button>
+              ))}
+            </div>
+          )}
           {scanHint && (
             <p className="text-xs text-amber-700 dark:text-gold">{scanHint}</p>
           )}
