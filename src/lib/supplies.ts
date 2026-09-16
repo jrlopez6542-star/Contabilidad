@@ -7,6 +7,14 @@ export const SUPPLY_CATEGORIES = [
   "otro",
 ] as const;
 
+/** Packaging supplies C4/C10 use a fixed alert minimum of 100 units. */
+export const PACKAGING_SUPPLY_CODES = ["C4", "C10"] as const;
+export const PACKAGING_DEFAULT_MIN_STOCK = 100;
+
+export function isPackagingSupplyCode(code: string): boolean {
+  return (PACKAGING_SUPPLY_CODES as readonly string[]).includes(code);
+}
+
 export type SupplyCategory = (typeof SUPPLY_CATEGORIES)[number];
 
 export const SUPPLY_CATEGORY_LABELS: Record<SupplyCategory, string> = {

@@ -11,8 +11,9 @@ import {
   decreasePackagingForItems,
   restorePackagingForItems,
 } from "@/lib/packaging";
+import type { PackagingCrossEvent } from "@/lib/packaging";
 import { writeAudit } from "@/lib/audit";
-import { notifyStockCrossings } from "@/lib/stock-alerts";
+import { notifyPackagingLow, notifyStockCrossings } from "@/lib/stock-alerts";
 import type { StockCrossEvent } from "@/lib/stock-alerts";
 
 const SALE_METHODS = new Set(["efectivo", "transferencia"]);
@@ -109,6 +110,7 @@ export async function createInvoiceAction(formData: FormData) {
 
       let stockCrossings: StockCrossEvent[] = [];
       let packagingChanged = false;
+      let packagingCrossings: PackagingCrossEvent[] = [];
       if (issueNow) {
         const stockMeta = {
           reason: `Venta ${number}`,
@@ -119,12 +121,14 @@ export async function createInvoiceAction(formData: FormData) {
           userEmail: session.email,
         };
         stockCrossings = await decreaseStockForItems(tx, computed, stockMeta);
-        packagingChanged = await decreasePackagingForItems(tx, computed, {
+        const packaging = await decreasePackagingForItems(tx, computed, {
           reason: `Empaque venta ${number}`,
           refNumber: number,
           userId: session.id,
           userEmail: session.email,
         });
+        packagingChanged = packaging.changed;
+        packagingCrossings = packaging.crossed;
       }
 
       if (issueNow && markPaid && paymentMethod && total > 0) {
@@ -139,14 +143,21 @@ export async function createInvoiceAction(formData: FormData) {
         });
       }
 
-      return { created, stockCrossings, packagingChanged };
+      return { created, stockCrossings, packagingChanged, packagingCrossings };
     });
 
-    // Soft-fail stock alert after commit
+    // Soft-fail stock alerts after commit.
     try {
       await notifyStockCrossings(invoice.stockCrossings || []);
     } catch (e) {
-      console.error("[stock-alerts] createInvoice hook failed", e);
+      console.error("[stock-alerts] createInvoice product hook failed", e);
+    }
+    try {
+      if (invoice.packagingCrossings.length > 0) {
+        await notifyPackagingLow(invoice.packagingCrossings);
+      }
+    } catch (e) {
+      console.error("[stock-alerts] createInvoice packaging hook failed", e);
     }
 
     await writeAudit(
@@ -320,6 +331,7 @@ export async function issueInvoiceAction(
 
   let stockCrossings: StockCrossEvent[] = [];
   let packagingChanged = false;
+  let packagingCrossings: PackagingCrossEvent[] = [];
   try {
     const result = await prisma.$transaction(async (tx) => {
       const stockMeta = {
@@ -359,7 +371,8 @@ export async function issueInvoiceAction(
       return { crossings, packaging };
     });
     stockCrossings = result.crossings;
-    packagingChanged = result.packaging;
+    packagingChanged = result.packaging.changed;
+    packagingCrossings = result.packaging.crossed;
   } catch (e) {
     return {
       error: e instanceof Error ? e.message : "No se pudo emitir la factura.",
@@ -368,7 +381,14 @@ export async function issueInvoiceAction(
   try {
     await notifyStockCrossings(stockCrossings || []);
   } catch (e) {
-    console.error("[stock-alerts] issueInvoice hook failed", e);
+    console.error("[stock-alerts] issueInvoice product hook failed", e);
+  }
+  try {
+    if (packagingCrossings.length > 0) {
+      await notifyPackagingLow(packagingCrossings);
+    }
+  } catch (e) {
+    console.error("[stock-alerts] issueInvoice packaging hook failed", e);
   }
   await writeAudit(
     session,

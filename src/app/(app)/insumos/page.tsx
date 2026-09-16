@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requirePermission, getSession } from "@/lib/auth";
 import { can } from "@/lib/roles";
-import { Card, EmptyState, PageHeader, Table } from "@/components/ui";
+import { AlertBanner, Card, EmptyState, PageHeader, Table } from "@/components/ui";
+import Link from "next/link";
 import { SupplyForm } from "./form";
 import { SupplyEditRow } from "./edit-row";
 
@@ -12,6 +13,12 @@ export default async function InsumosPage() {
   const supplies = await prisma.supply.findMany({
     orderBy: [{ category: "asc" }, { name: "asc" }],
   });
+  const lowStockSupplies = supplies.filter(
+    (s) => s.active && s.minStock > 0 && s.quantity <= s.minStock
+  );
+  const lowPackagingSupplies = lowStockSupplies.filter((s) =>
+    ["C4", "C10"].includes(s.code)
+  );
 
   return (
     <div>
@@ -23,7 +30,37 @@ export default async function InsumosPage() {
             : "Materias primas e insumos (solo lectura). Las ventas C4*/C10* descuentan empaque C4/C10."
         }
       />
-      <div className="grid gap-4 lg:grid-cols-3">
+      {lowStockSupplies.length > 0 && (
+        <div className="mb-6">
+          <AlertBanner
+            tone="warning"
+            title={
+              lowPackagingSupplies.length > 0
+                ? "Aviso: quedan 100 o menos cajas de empaque"
+                : "Aviso de stock mínimo"
+            }
+          >
+            {lowPackagingSupplies.length > 0 && (
+              <p className="font-medium">
+                Cajas: {lowPackagingSupplies
+                  .map((s) => `${s.name}: ${s.quantity} (mín. ${s.minStock})`)
+                  .join(" · ")}
+              </p>
+            )}
+            <ul className="mt-1 list-inside list-disc">
+              {lowStockSupplies.map((s) => (
+                <li key={s.id}>
+                  <Link href="#insumos" className="underline">
+                    {s.code} — {s.name}
+                  </Link>{" "}
+                  · quedan {s.quantity} (mín. {s.minStock})
+                </li>
+              ))}
+            </ul>
+          </AlertBanner>
+        </div>
+      )}
+      <div id="insumos" className="grid gap-4 lg:grid-cols-3">
         {canWrite && (
           <Card className="h-fit !p-4 lg:col-span-1">
             <h2 className="mb-3 text-sm font-semibold text-slate-800 dark:text-brand-100">

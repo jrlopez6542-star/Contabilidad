@@ -61,7 +61,7 @@ export function SupplyEditRow({
     }
   }
 
-  const low = supply.quantity < supply.minStock && supply.minStock > 0;
+  const low = supply.quantity <= supply.minStock && supply.minStock > 0;
 
   return (
     <>
@@ -92,7 +92,7 @@ export function SupplyEditRow({
             </span>
             {low && (
               <Badge className="bg-gold-50 text-amber-900 dark:bg-gold/15 dark:text-gold-100">
-                bajo
+                ≤ mínimo (aviso)
               </Badge>
             )}
           </span>

@@ -7,6 +7,8 @@ import { writeAudit } from "@/lib/audit";
 import {
   isSupplyCategory,
   isSupplyUnit,
+  isPackagingSupplyCode,
+  PACKAGING_DEFAULT_MIN_STOCK,
 } from "@/lib/supplies";
 
 export async function createSupplyAction(formData: FormData) {
@@ -16,7 +18,7 @@ export async function createSupplyAction(formData: FormData) {
   const categoryRaw = String(formData.get("category") || "otro").trim();
   const unitRaw = String(formData.get("unit") || "unidad").trim();
   const quantity = Number(formData.get("quantity") || 0);
-  const minStock = Number(formData.get("minStock") || 0);
+  const requestedMinStock = Number(formData.get("minStock") || 0);
   const unitCost = Number(formData.get("unitCost") || 0);
   const notes = String(formData.get("notes") || "").trim();
 
@@ -26,9 +28,14 @@ export async function createSupplyAction(formData: FormData) {
   if (!code || !name) {
     return { error: "Código y nombre son obligatorios." };
   }
-  if (quantity < 0 || minStock < 0 || unitCost < 0) {
+  if (quantity < 0 || requestedMinStock < 0 || unitCost < 0) {
     return { error: "Cantidad, mínimo y costo no pueden ser negativos." };
   }
+
+  // C4/C10 are packaging and always keep the default alert minimum of 100.
+  const minStock = isPackagingSupplyCode(code)
+    ? PACKAGING_DEFAULT_MIN_STOCK
+    : requestedMinStock;
 
   try {
     const supply = await prisma.supply.create({
@@ -79,7 +86,7 @@ export async function updateSupplyAction(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   const categoryRaw = String(formData.get("category") || "otro").trim();
   const unitRaw = String(formData.get("unit") || "unidad").trim();
-  const minStock = Number(formData.get("minStock") || 0);
+  const requestedMinStock = Number(formData.get("minStock") || 0);
   const unitCost = Number(formData.get("unitCost") || 0);
   const notes = String(formData.get("notes") || "").trim();
   const active =
@@ -91,9 +98,14 @@ export async function updateSupplyAction(formData: FormData) {
   if (!id || !code || !name) {
     return { error: "Código y nombre son obligatorios." };
   }
-  if (minStock < 0 || unitCost < 0) {
+  if (requestedMinStock < 0 || unitCost < 0) {
     return { error: "Mínimo y costo no pueden ser negativos." };
   }
+
+  // C4/C10 are packaging and always keep the default alert minimum of 100.
+  const minStock = isPackagingSupplyCode(code)
+    ? PACKAGING_DEFAULT_MIN_STOCK
+    : requestedMinStock;
 
   try {
     await prisma.supply.update({

@@ -19,7 +19,10 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { can } from "@/lib/roles";
 import { SendStockAlertButton } from "./send-stock-alert";
-import { getLowStockProducts } from "@/lib/stock-alerts";
+import {
+  getLowPackagingSupplies,
+  getLowStockProducts,
+} from "@/lib/stock-alerts";
 
 export default async function DashboardPage() {
   await requirePermission("dashboard:read");
@@ -38,8 +41,15 @@ export default async function DashboardPage() {
   const unpaidDays = company?.unpaidAlertDays ?? 30;
   const unpaidCutoff = new Date(now.getTime() - unpaidDays * 24 * 60 * 60 * 1000);
 
-  const [issuedThisMonth, unpaid, expensesMonth, recentInvoices, customers, lowStockProducts] =
-    await Promise.all([
+  const [
+    issuedThisMonth,
+    unpaid,
+    expensesMonth,
+    recentInvoices,
+    customers,
+    lowStockProducts,
+    lowPackagingSupplies,
+  ] = await Promise.all([
       prisma.invoice.findMany({
         where: {
           status: { in: ["issued", "paid"] },
@@ -67,6 +77,7 @@ export default async function DashboardPage() {
         },
       }),
       getLowStockProducts(),
+      getLowPackagingSupplies(),
     ]);
   const overdueUnpaid = unpaid.filter(
     (i) => i.issuedAt && i.issuedAt < unpaidCutoff
@@ -112,7 +123,9 @@ export default async function DashboardPage() {
         }
       />
 
-      {(overdueUnpaid.length > 0 || lowStockProducts.length > 0) && (
+      {(overdueUnpaid.length > 0 ||
+        lowStockProducts.length > 0 ||
+        lowPackagingSupplies.length > 0) && (
         <div className="mb-6 space-y-3">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-brand-100">
             Notificaciones
@@ -194,6 +207,25 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </Card>
+          )}
+          {lowPackagingSupplies.length > 0 && (
+            <AlertBanner
+              tone="warning"
+              title={`Cajas de empaque bajas: ${lowPackagingSupplies
+                .map(
+                  (s) =>
+                    `CAJA X${s.code === "C4" ? "4" : "10"}: ${s.quantity} (mín. ${s.minStock})`
+                )
+                .join(" · ")}`}
+            >
+              <p>Aviso: quedan 100 o menos cajas de empaque.</p>
+              <Link
+                href="/insumos"
+                className="mt-1 inline-block font-medium underline"
+              >
+                Ver insumos
+              </Link>
+            </AlertBanner>
           )}
         </div>
       )}

@@ -9,6 +9,19 @@ export type PackagingMovementMeta = {
   userEmail?: string;
 };
 
+export type PackagingCrossEvent = {
+  code: string;
+  name: string;
+  previous: number;
+  after: number;
+  minStock: number;
+};
+
+export type PackagingDecreaseResult = {
+  changed: boolean;
+  crossed: PackagingCrossEvent[];
+};
+
 const SUPPLY_LABEL: Record<string, string> = {
   C4: "cajas X4",
   C10: "cajas X10",
@@ -62,11 +75,12 @@ export async function decreasePackagingForItems(
   tx: Tx,
   items: { productId?: string | null; quantity: number }[],
   meta?: PackagingMovementMeta
-): Promise<boolean> {
+): Promise<PackagingDecreaseResult> {
   const demand = await aggregatePackagingDemand(tx, items);
-  if (demand.size === 0) return false;
+  if (demand.size === 0) return { changed: false, crossed: [] };
 
   let changed = false;
+  const crossed: PackagingCrossEvent[] = [];
   for (const [code, needed] of Array.from(demand.entries())) {
     const supply = await tx.supply.findUnique({ where: { code } });
     if (!supply) {
@@ -85,6 +99,15 @@ export async function decreasePackagingForItems(
       where: { id: supply.id },
       data: { quantity: after },
     });
+    if (available > supply.minStock && after <= supply.minStock) {
+      crossed.push({
+        code: supply.code,
+        name: supply.name,
+        previous: available,
+        after,
+        minStock: supply.minStock,
+      });
+    }
     await tx.supplyMovement.create({
       data: {
         supplyId: supply.id,
@@ -101,7 +124,7 @@ export async function decreasePackagingForItems(
     });
     changed = true;
   }
-  return changed;
+  return { changed, crossed };
 }
 
 /** Restore packaging supplies when voiding an issued invoice. */

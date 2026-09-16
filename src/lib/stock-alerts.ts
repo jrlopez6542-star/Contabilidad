@@ -12,6 +12,7 @@
 
 import { prisma } from "./prisma";
 import { appBaseUrl, sendEmail } from "./email";
+import type { PackagingCrossEvent } from "./packaging";
 
 export type StockCrossEvent = {
   productId: string;
@@ -127,6 +128,55 @@ export async function notifyStockCrossings(
   return { sent: true };
 }
 
+/** Soft-fail email for packaging supplies that just crossed minStock. */
+export async function notifyPackagingLow(
+  events: PackagingCrossEvent[]
+): Promise<{ sent: boolean; error?: string }> {
+  const crossed = events.filter(
+    (e) => e.previous > e.minStock && e.after <= e.minStock
+  );
+  if (crossed.length === 0) return { sent: false };
+
+  const recipients = await resolveStockAlertRecipients();
+  if (recipients.length === 0) {
+    console.warn(
+      "[stock-alerts] No recipients configured (stockAlertEmails / STOCK_ALERT_EMAILS)"
+    );
+    return { sent: false, error: "Sin destinatarios de alerta de stock." };
+  }
+
+  const suppliesUrl = `${appBaseUrl()}/insumos`;
+  const subject = "Alerta de cajas de empaque — Buñuelandia";
+  const intro = "Cajas de empaque que cruzaron el mínimo de stock:";
+  const rows = crossed
+    .map(
+      (s) =>
+        `<li><strong>${escapeHtml(s.code)}</strong> — ${escapeHtml(s.name)}: quedan <strong>${s.after}</strong> (mín. ${s.minStock})</li>`
+    )
+    .join("");
+  const textRows = crossed
+    .map((s) => `- ${s.code} — ${s.name}: quedan ${s.after} (mín. ${s.minStock})`)
+    .join("\n");
+  const payload = {
+    subject,
+    html: `<div style="font-family:system-ui,sans-serif;font-size:14px;color:#1e293b"><p>${intro}</p><ul>${rows}</ul><p><a href="${suppliesUrl}">Ver insumos</a></p></div>`,
+    text: `${intro}\n${textRows}\n\nInsumos: ${suppliesUrl}`,
+  };
+
+  let lastError: string | undefined;
+  let anyOk = false;
+  for (const to of recipients) {
+    const res = await sendEmail({ to, ...payload });
+    if (res.ok) anyOk = true;
+    else lastError = res.error;
+  }
+  if (!anyOk) {
+    console.error("[stock-alerts] packaging send failed", lastError);
+    return { sent: false, error: lastError || "No se pudo enviar el correo." };
+  }
+  return { sent: true };
+}
+
 /** Manual dashboard alert: current low-stock list (no threshold dedupe). */
 export async function sendManualLowStockAlert(): Promise<{
   ok: boolean;
@@ -181,4 +231,17 @@ export async function getLowStockProducts() {
     orderBy: { stock: "asc" },
   });
   return products.filter((p) => p.stock <= p.minStock);
+}
+
+/** Active C4/C10 packaging supplies at or below their positive minimum. */
+export async function getLowPackagingSupplies() {
+  const supplies = await prisma.supply.findMany({
+    where: {
+      active: true,
+      code: { in: ["C4", "C10"] },
+      minStock: { gt: 0 },
+    },
+    orderBy: { code: "asc" },
+  });
+  return supplies.filter((s) => s.quantity <= s.minStock);
 }
