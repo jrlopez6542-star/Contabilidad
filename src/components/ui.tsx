@@ -13,10 +13,12 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-brand sm:text-2xl">
+        <h1 className="text-xl font-bold tracking-tight text-brand dark:text-brand-100 sm:text-2xl">
           {title}
         </h1>
-        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+        {subtitle && (
+          <p className="mt-1 text-sm text-slate-500 dark:text-brand-200">{subtitle}</p>
+        )}
       </div>
       {actions && (
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
@@ -36,7 +38,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-brand/10 bg-white p-4 shadow-sm sm:p-5 ${className}`}
+      className={`rounded-xl border border-brand/10 bg-surface p-4 shadow-sm dark:border-brand-200/15 dark:shadow-none sm:p-5 ${className}`}
     >
       {children}
     </div>
@@ -54,9 +56,9 @@ export function StatCard({
 }) {
   return (
     <Card>
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-brand">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      <p className="text-sm font-medium text-slate-500 dark:text-brand-200">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-brand dark:text-brand-100">{value}</p>
+      {hint && <p className="mt-1 text-xs text-slate-400 dark:text-brand-200/80">{hint}</p>}
     </Card>
   );
 }
@@ -70,11 +72,12 @@ export function Button({
   variant?: "primary" | "secondary" | "danger" | "ghost";
 }) {
   const styles = {
-    primary: "bg-brand text-white hover:bg-brand-dark",
+    primary: "bg-brand text-white hover:bg-brand-dark dark:bg-brand-light dark:hover:bg-brand",
     secondary:
-      "bg-white text-brand border border-brand/20 hover:bg-brand-50",
+      "bg-surface text-brand border border-brand/20 hover:bg-brand-50 dark:text-brand-100 dark:border-brand-200/25 dark:hover:bg-brand-800",
     danger: "bg-jam text-white hover:bg-jam-light",
-    ghost: "bg-transparent text-slate-600 hover:bg-cream-muted",
+    ghost:
+      "bg-transparent text-slate-600 hover:bg-cream-muted dark:text-brand-200 dark:hover:bg-brand-800/60",
   };
   return (
     <button
@@ -103,11 +106,12 @@ export function LinkButton({
   hard?: boolean;
 }) {
   const styles = {
-    primary: "bg-brand text-white hover:bg-brand-dark",
+    primary: "bg-brand text-white hover:bg-brand-dark dark:bg-brand-light dark:hover:bg-brand",
     secondary:
-      "bg-white text-brand border border-brand/20 hover:bg-brand-50",
+      "bg-surface text-brand border border-brand/20 hover:bg-brand-50 dark:text-brand-100 dark:border-brand-200/25 dark:hover:bg-brand-800",
     danger: "bg-jam text-white hover:bg-jam-light",
-    ghost: "bg-transparent text-slate-600 hover:bg-cream-muted",
+    ghost:
+      "bg-transparent text-slate-600 hover:bg-cream-muted dark:text-brand-200 dark:hover:bg-brand-800/60",
   };
   const cls = `inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition sm:min-h-10 ${styles[variant]} ${className}`;
   // Next.js <Link> soft-navigates; binary route handlers (PDF/CSV) break and
@@ -138,10 +142,12 @@ export function Input({
   return (
     <label className="block text-sm">
       {label && (
-        <span className="mb-1 block font-medium text-slate-700">{label}</span>
+        <span className="mb-1 block font-medium text-slate-700 dark:text-brand-100">
+          {label}
+        </span>
       )}
       <input
-        className={`w-full min-h-11 rounded-lg border border-slate-300 px-3 py-2.5 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted sm:min-h-10 sm:text-sm ${className}`}
+        className={`w-full min-h-11 rounded-lg border border-slate-300 bg-surface px-3 py-2.5 text-base text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted dark:border-brand-200/25 dark:text-brand-50 dark:placeholder:text-brand-200/50 dark:focus:border-brand-200 dark:focus:ring-brand-800 sm:min-h-10 sm:text-sm ${className}`}
         {...props}
       />
     </label>
@@ -157,10 +163,12 @@ export function Select({
   return (
     <label className="block text-sm">
       {label && (
-        <span className="mb-1 block font-medium text-slate-700">{label}</span>
+        <span className="mb-1 block font-medium text-slate-700 dark:text-brand-100">
+          {label}
+        </span>
       )}
       <select
-        className={`w-full min-h-11 rounded-lg border border-slate-300 px-3 py-2.5 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted sm:min-h-10 sm:text-sm ${className}`}
+        className={`w-full min-h-11 rounded-lg border border-slate-300 bg-surface px-3 py-2.5 text-base text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted dark:border-brand-200/25 dark:text-brand-50 dark:focus:border-brand-200 dark:focus:ring-brand-800 sm:min-h-10 sm:text-sm ${className}`}
         {...props}
       >
         {children}
@@ -177,10 +185,12 @@ export function Textarea({
   return (
     <label className="block text-sm">
       {label && (
-        <span className="mb-1 block font-medium text-slate-700">{label}</span>
+        <span className="mb-1 block font-medium text-slate-700 dark:text-brand-100">
+          {label}
+        </span>
       )}
       <textarea
-        className={`w-full min-h-[5.5rem] rounded-lg border border-slate-300 px-3 py-2.5 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted sm:text-sm ${className}`}
+        className={`w-full min-h-[5.5rem] rounded-lg border border-slate-300 bg-surface px-3 py-2.5 text-base text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted dark:border-brand-200/25 dark:text-brand-50 dark:placeholder:text-brand-200/50 dark:focus:border-brand-200 dark:focus:ring-brand-800 sm:text-sm ${className}`}
         {...props}
       />
     </label>
@@ -211,8 +221,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-brand/20 bg-white px-6 py-14 text-center shadow-sm">
-      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand">
+    <div className="rounded-xl border border-dashed border-brand/20 bg-surface px-6 py-14 text-center shadow-sm dark:border-brand-200/20 dark:shadow-none">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand dark:bg-brand-800 dark:text-brand-100">
         <svg
           className="h-6 w-6"
           fill="none"
@@ -227,7 +237,7 @@ export function EmptyState({
           />
         </svg>
       </div>
-      <p className="text-sm text-slate-500">{message}</p>
+      <p className="text-sm text-slate-500 dark:text-brand-200">{message}</p>
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
@@ -235,8 +245,8 @@ export function EmptyState({
 
 export function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="-mx-3 overflow-x-auto overscroll-x-contain rounded-xl border border-brand/10 bg-white shadow-sm sm:mx-0 [-webkit-overflow-scrolling:touch]">
-      <table className="w-full min-w-[40rem] divide-y divide-slate-200 text-sm sm:min-w-full">
+    <div className="-mx-3 overflow-x-auto overscroll-x-contain rounded-xl border border-brand/10 bg-surface shadow-sm dark:border-brand-200/15 dark:shadow-none sm:mx-0 [-webkit-overflow-scrolling:touch]">
+      <table className="w-full min-w-[40rem] divide-y divide-slate-200 text-sm dark:divide-brand-200/15 sm:min-w-full">
         {children}
       </table>
     </div>
@@ -253,9 +263,11 @@ export function AlertBanner({
   children: ReactNode;
 }) {
   const tones = {
-    warning: "border-gold/30 bg-gold-50 text-amber-900",
-    danger: "border-jam/30 bg-jam-50 text-jam",
-    info: "border-brand/20 bg-brand-50 text-brand",
+    warning:
+      "border-gold/30 bg-gold-50 text-amber-900 dark:border-gold/40 dark:bg-gold/15 dark:text-gold-100",
+    danger:
+      "border-jam/30 bg-jam-50 text-jam dark:border-jam/40 dark:bg-jam/20 dark:text-jam-100",
+    info: "border-brand/20 bg-brand-50 text-brand dark:border-brand-200/30 dark:bg-brand-800/50 dark:text-brand-100",
   };
   return (
     <div className={`rounded-xl border px-4 py-3 text-sm ${tones[tone]}`}>

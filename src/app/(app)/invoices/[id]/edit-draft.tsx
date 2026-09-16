@@ -219,7 +219,7 @@ export function DraftInvoiceEditor({
           {lines.map((l) => (
             <div
               key={l.key}
-              className="grid gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3 md:grid-cols-12"
+              className="grid gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-brand-200/20 dark:bg-brand-900/45 md:grid-cols-12"
             >
               <div className="md:col-span-3">
                 <Select

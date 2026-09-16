@@ -22,6 +22,8 @@ async function main() {
     bcrypt.hash("Contador123!", 10),
   ]);
 
+  // Roles: superadmin (mantenedor técnico) | admin | vendedor | contador
+  // El seed usa admin operativo; superadmin se asigna en producción al mantenedor.
   await prisma.user.createMany({
     data: [
       {

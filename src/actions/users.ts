@@ -3,11 +3,34 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { assertPermission, hashPassword, requireSession, verifyPassword } from "@/lib/auth";
-import { isRole, ROLES } from "@/lib/roles";
+import {
+  assignableRoles,
+  canManageTargetRole,
+  isRole,
+  type Role,
+} from "@/lib/roles";
 import { writeAudit } from "@/lib/audit";
 
 function parseRole(value: string) {
   return isRole(value) ? value : null;
+}
+
+async function countActiveSuperadmins(excludeId?: string) {
+  return prisma.user.count({
+    where: {
+      role: "superadmin",
+      active: true,
+      ...(excludeId ? { NOT: { id: excludeId } } : {}),
+    },
+  });
+}
+
+function roleNotAllowed(actorRole: Role, targetRole: Role) {
+  const allowed = assignableRoles(actorRole);
+  if (!allowed.includes(targetRole)) {
+    return "No tiene permiso para asignar ese rol.";
+  }
+  return null;
 }
 
 export async function createUserAction(formData: FormData) {
@@ -22,9 +45,8 @@ export async function createUserAction(formData: FormData) {
   if (!name || !email || !role) {
     return { error: "Nombre, correo y rol son obligatorios." };
   }
-  if (!ROLES.includes(role)) {
-    return { error: "Rol inválido." };
-  }
+  const assignErr = roleNotAllowed(session.role, role);
+  if (assignErr) return { error: assignErr };
   if (password.length < 6) {
     return { error: "La contraseña debe tener al menos 6 caracteres." };
   }
@@ -65,13 +87,48 @@ export async function updateUserAction(formData: FormData) {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) return { error: "Usuario no encontrado." };
 
-  // Prevent self-lockout: cannot deactivate or demote yourself away from admin
+  if (!isRole(user.role)) {
+    return { error: "Usuario con rol inválido." };
+  }
+
+  // Non-superadmin cannot touch superadmin accounts
+  if (!canManageTargetRole(session.role, user.role)) {
+    return { error: "No puede modificar un superusuario." };
+  }
+
+  const assignErr = roleNotAllowed(session.role, role);
+  if (assignErr) return { error: assignErr };
+
+  // Prevent self-lockout
   if (user.id === session.id) {
     if (!active) {
       return { error: "No puede desactivarse a sí mismo." };
     }
-    if (role !== "admin") {
+    if (session.role === "admin" && role !== "admin") {
       return { error: "No puede quitarse el rol de administrador." };
+    }
+    if (session.role === "superadmin" && role !== "superadmin") {
+      const others = await countActiveSuperadmins(session.id);
+      if (others === 0) {
+        return {
+          error:
+            "No puede quitarse el rol de superusuario: es el único superusuario activo.",
+        };
+      }
+    }
+  }
+
+  // Cannot remove last active superadmin (demote or deactivate)
+  if (user.role === "superadmin" && user.active) {
+    const demoting = role !== "superadmin";
+    const deactivating = !active;
+    if (demoting || deactivating) {
+      const others = await countActiveSuperadmins(user.id);
+      if (others === 0) {
+        return {
+          error: "No se puede quitar el último superusuario activo.",
+        };
+      }
     }
   }
 
@@ -105,6 +162,13 @@ export async function setUserPasswordAction(formData: FormData) {
   if (password.length < 6) {
     return { error: "La contraseña debe tener al menos 6 caracteres." };
   }
+
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) return { error: "Usuario no encontrado." };
+  if (!isRole(user.role) || !canManageTargetRole(session.role, user.role)) {
+    return { error: "No puede modificar un superusuario." };
+  }
+
   const passwordHash = await hashPassword(password);
   await prisma.user.update({ where: { id }, data: { passwordHash } });
   await writeAudit(session, "update", "user", id, "Restableció contraseña de usuario");
@@ -117,6 +181,20 @@ export async function deactivateUserAction(id: string) {
   if (id === session.id) {
     return { error: "No puede desactivarse a sí mismo." };
   }
+
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) return { error: "Usuario no encontrado." };
+  if (!isRole(user.role) || !canManageTargetRole(session.role, user.role)) {
+    return { error: "No puede desactivar un superusuario." };
+  }
+
+  if (user.role === "superadmin" && user.active) {
+    const others = await countActiveSuperadmins(user.id);
+    if (others === 0) {
+      return { error: "No se puede desactivar el último superusuario activo." };
+    }
+  }
+
   await prisma.user.update({ where: { id }, data: { active: false } });
   await writeAudit(session, "update", "user", id, "Desactivó usuario");
   revalidatePath("/users");
@@ -125,6 +203,12 @@ export async function deactivateUserAction(id: string) {
 
 export async function activateUserAction(id: string) {
   const session = await assertPermission("users:manage");
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) return { error: "Usuario no encontrado." };
+  if (!isRole(user.role) || !canManageTargetRole(session.role, user.role)) {
+    return { error: "No puede activar un superusuario." };
+  }
+
   await prisma.user.update({ where: { id }, data: { active: true } });
   await writeAudit(session, "update", "user", id, "Activó usuario");
   revalidatePath("/users");

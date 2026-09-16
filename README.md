@@ -6,7 +6,7 @@ App de **contabilidad, ventas, cotizaciones e inventario** de **Buñuelandia** (
 - Moneda **COP**
 - Facturas **internas + PDF** (sin facturación electrónica DIAN)
 - Campos estructurales listos para DIAN más adelante (NIT, razón social, numeración secuencial)
-- **Usuarios y roles**: `admin`, `vendedor`, `contador`
+- **Usuarios y roles**: `superadmin`, `admin`, `vendedor`, `contador`
 
 ## Stack
 
@@ -63,27 +63,29 @@ El seed incluye: empresa, 4 productos, 3 clientes, 1 factura pagada (`FV-0001`),
 
 ## Matriz de roles
 
-| Recurso / acción | admin | vendedor | contador |
-|------------------|:-----:|:--------:|:--------:|
-| Panel (dashboard) | ✓ | ✓ | ✓ |
-| Usuarios (CRUD / password) | ✓ | — | — |
-| Empresa — leer | ✓ | — | ✓ |
-| Empresa — editar | ✓ | — | — |
-| Productos — leer | ✓ | ✓ | ✓ |
-| Productos — escribir | ✓ | — | — |
-| Clientes — leer | ✓ | ✓ | ✓ |
-| Clientes — escribir | ✓ | ✓ | — |
-| Facturas — leer / PDF | ✓ | ✓ | ✓ |
-| Facturas — crear / emitir / anular | ✓ | ✓ | — |
-| Pagos — leer | ✓ | ✓ | ✓ |
-| Pagos — registrar | ✓ | ✓ | ✓ |
-| Gastos — leer / CRUD | ✓ | — | ✓ |
-| Cotizaciones — leer | ✓ | ✓ | ✓ |
-| Cotizaciones — escribir | ✓ | ✓ | — |
-| Reportes | ✓ | — | ✓ |
-| Respaldo / export | ✓ | — | — |
+| Recurso / acción | superadmin | admin | vendedor | contador |
+|------------------|:----------:|:-----:|:--------:|:--------:|
+| Panel (dashboard) | ✓ | ✓ | ✓ | ✓ |
+| Usuarios (CRUD / password) | ✓ | ✓ | — | — |
+| Empresa — leer | ✓ | ✓ | — | ✓ |
+| Empresa — editar | ✓ | ✓ | — | — |
+| Productos — leer | ✓ | ✓ | ✓ | ✓ |
+| Productos — escribir | ✓ | ✓ | — | — |
+| Clientes — leer | ✓ | ✓ | ✓ | ✓ |
+| Clientes — escribir | ✓ | ✓ | ✓ | — |
+| Facturas — leer / PDF | ✓ | ✓ | ✓ | ✓ |
+| Facturas — crear / emitir / anular | ✓ | ✓ | ✓ | — |
+| Pagos — leer | ✓ | ✓ | ✓ | ✓ |
+| Pagos — registrar | ✓ | ✓ | ✓ | ✓ |
+| Gastos — leer / CRUD | ✓ | ✓ | — | ✓ |
+| Cotizaciones — leer | ✓ | ✓ | ✓ | ✓ |
+| Cotizaciones — escribir | ✓ | ✓ | ✓ | — |
+| Reportes | ✓ | ✓ | — | ✓ |
+| Respaldo / export | ✓ | ✓ | — | — |
 
 Los usuarios inactivos no pueden iniciar sesión. La desactivación es soft (no se borran cuentas).
+
+`superadmin` (Superusuario) tiene los mismos permisos de negocio que `admin`, más la exclusividad de crear/editar/desactivar otros superusuarios y de asignar el rol `superadmin`. Un `admin` no puede tocar cuentas `superadmin` ni asignar ese rol. No se puede quitar el último superusuario activo.
 
 ## Scripts
 
@@ -98,8 +100,8 @@ Los usuarios inactivos no pueden iniciar sesión. La desactivación es soft (no 
 
 ## Módulos (pack profesional)
 
-1. **Auth + roles** — login rate-limit (5 fallos / 15 min); cookie httpOnly + `secure` en prod; roles admin / vendedor / contador
-2. **Usuarios** — CRUD admin, restablecer contraseña, activar/desactivar; **Mi perfil**
+1. **Auth + roles** — login rate-limit (5 fallos / 15 min); cookie httpOnly + `secure` en prod; roles superadmin / admin / vendedor / contador
+2. **Usuarios** — CRUD (admin/superadmin); solo superadmin gestiona cuentas `superadmin`; restablecer contraseña, activar/desactivar; **Mi perfil**
 3. **Empresa / branding** — razón social, NIT, logo (data URL en DB o ruta pública), prefijos FV/COT, días alerta vencidas
 4. **Productos + inventario** — stock / mínimo / trackStock; baja al emitir factura; ajuste de stock (admin); alertas en panel
 5. **Clientes** — nombre, NIT/CC, correo, teléfono, dirección

@@ -73,6 +73,22 @@ export default async function InvoiceDetailPage({
             >
               Descargar PDF
             </LinkButton>
+            <LinkButton
+              href={`/invoices/${invoice.id}/ticket`}
+              variant="secondary"
+              hard
+              className="w-full sm:w-auto"
+            >
+              Ticket térmico
+            </LinkButton>
+            <LinkButton
+              href={`/invoices/${invoice.id}/ticket/print`}
+              variant="secondary"
+              hard
+              className="w-full sm:w-auto"
+            >
+              Imprimir ticket
+            </LinkButton>
             <LinkButton href="/invoices" variant="ghost" className="w-full sm:w-auto">
               Volver
             </LinkButton>

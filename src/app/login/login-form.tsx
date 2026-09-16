@@ -11,6 +11,7 @@ import {
   DEFAULT_LOGO,
 } from "@/lib/branding";
 import { ViewModeToggle } from "@/components/view-mode-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function LoginForm({
   companyName: initialName = DEFAULT_COMPANY_NAME,
@@ -65,7 +66,7 @@ export function LoginForm({
             alt={companyName}
             className="mx-auto mb-2 h-32 w-auto max-h-36 object-contain drop-shadow-md sm:h-40 sm:max-h-44"
           />
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-slate-600 dark:text-brand-200">
             Facturación · Cotizaciones · Inventario · COP
           </p>
         </div>
@@ -93,22 +94,25 @@ export function LoginForm({
             <Button type="submit" className="w-full" disabled={pending}>
               {pending ? "Ingresando…" : "Iniciar sesión"}
             </Button>
-            <div className="rounded-lg border border-brand/15 bg-brand-50/60 px-3 py-3 text-center">
+            <div className="rounded-lg border border-brand/15 bg-brand-50/60 px-3 py-3 text-center dark:border-brand-200/20 dark:bg-brand-800/40">
               <Link
                 href="/forgot-password"
-                className="text-sm font-semibold text-brand underline-offset-2 hover:underline"
+                className="text-sm font-semibold text-brand underline-offset-2 hover:underline dark:text-brand-100"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-brand-200/80">
                 Te enviaremos un enlace seguro (válido 1 hora)
               </p>
             </div>
           </form>
         </Card>
         <div className="mt-6 flex flex-col items-center gap-3">
-          <ViewModeToggle />
-          <p className="text-center text-xs text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <ViewModeToggle />
+          </div>
+          <p className="text-center text-xs text-slate-400 dark:text-brand-200/70">
             Sistema interno de gestión comercial
           </p>
         </div>

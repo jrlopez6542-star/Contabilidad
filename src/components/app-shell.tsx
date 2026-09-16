@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { CompanyLogo } from "@/components/company-logo";
 import { ViewModeToggle } from "@/components/view-mode-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Role } from "@/lib/roles";
 
 export function AppShell({
@@ -98,11 +99,11 @@ export function AppShell({
       )}
 
       <main className="flex min-w-0 flex-1 flex-col overflow-auto bg-cream-muted">
-        <header className="sticky top-0 z-30 border-b border-brand/10 bg-cream/95 backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-brand/10 bg-cream/95 backdrop-blur dark:border-brand-200/15 dark:bg-cream-muted/95">
           <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
             <button
               type="button"
-              className="app-mobile-only inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-brand/15 bg-white text-brand shadow-sm hover:bg-brand-50"
+              className="app-mobile-only inline-flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-brand/15 bg-surface text-brand shadow-sm hover:bg-brand-50 dark:border-brand-200/25 dark:text-brand-100 dark:hover:bg-brand-800"
               aria-label="Abrir menú"
               aria-expanded={drawerOpen}
               onClick={() => setDrawerOpen(true)}
@@ -128,12 +129,15 @@ export function AppShell({
                 alt={companyName}
                 className="app-header-logo h-12 w-auto max-h-12 shrink-0 object-contain drop-shadow-sm sm:h-14 sm:max-h-14"
               />
-              <p className="hidden min-w-0 truncate text-xs text-slate-500 sm:block">
+              <p className="hidden min-w-0 truncate text-xs text-slate-500 dark:text-brand-200 sm:block">
                 Panel de gestión
               </p>
             </div>
 
-            <ViewModeToggle compact className="shrink-0" />
+            <div className="flex shrink-0 items-center gap-1.5">
+              <ThemeToggle />
+              <ViewModeToggle compact />
+            </div>
           </div>
         </header>
         <div className="app-content-clip mx-auto w-full max-w-6xl flex-1 px-3 py-4 sm:px-6 sm:py-8">

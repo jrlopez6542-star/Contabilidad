@@ -42,6 +42,16 @@ export default async function QuoteDetailPage({
             <LinkButton href={`/quotes/${quote.id}/pdf`} variant="secondary" hard>
               Descargar PDF
             </LinkButton>
+            <LinkButton href={`/quotes/${quote.id}/ticket`} variant="secondary" hard>
+              Ticket térmico
+            </LinkButton>
+            <LinkButton
+              href={`/quotes/${quote.id}/ticket/print`}
+              variant="secondary"
+              hard
+            >
+              Imprimir ticket
+            </LinkButton>
             <LinkButton href="/quotes" variant="ghost">
               Volver
             </LinkButton>

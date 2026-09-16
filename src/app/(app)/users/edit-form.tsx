@@ -8,7 +8,7 @@ import {
   updateUserAction,
 } from "@/actions/users";
 import { Button, Input, Select } from "@/components/ui";
-import type { Role } from "@/lib/roles";
+import { ROLE_LABELS, type Role } from "@/lib/roles";
 
 type User = {
   id: string;
@@ -18,9 +18,30 @@ type User = {
   active: boolean;
 };
 
-export function UserEditForm({ user }: { user: User }) {
+export function UserEditForm({
+  user,
+  assignableRoles,
+  canManage,
+}: {
+  user: User;
+  assignableRoles: Role[];
+  canManage: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+
+  if (!canManage) {
+    return (
+      <p className="text-sm text-slate-600">
+        Solo un superusuario puede editar esta cuenta.
+      </p>
+    );
+  }
+
+  // Ensure current role appears even if somehow missing from list (defensive)
+  const roleOptions = assignableRoles.includes(user.role)
+    ? assignableRoles
+    : [user.role, ...assignableRoles];
 
   async function onUpdate(formData: FormData) {
     setError(null);
@@ -52,9 +73,11 @@ export function UserEditForm({ user }: { user: User }) {
           defaultValue={user.email}
         />
         <Select label="Rol" name="role" defaultValue={user.role} required>
-          <option value="admin">Administrador</option>
-          <option value="vendedor">Vendedor</option>
-          <option value="contador">Contador</option>
+          {roleOptions.map((r) => (
+            <option key={r} value={r}>
+              {ROLE_LABELS[r]}
+            </option>
+          ))}
         </Select>
         <label className="flex items-end gap-2 pb-2 text-sm text-slate-700">
           <input
@@ -107,8 +130,9 @@ export function UserEditForm({ user }: { user: User }) {
             onClick={async () => {
               setError(null);
               setMsg(null);
-              await activateUserAction(user.id);
-              setMsg("Usuario reactivado.");
+              const res = await activateUserAction(user.id);
+              if (res?.error) setError(res.error);
+              else setMsg("Usuario reactivado.");
             }}
           >
             Reactivar

@@ -32,7 +32,7 @@ export function Sidebar({
 
   return (
     <aside
-      className={`flex w-full shrink-0 flex-col border-r border-brand/15 bg-brand text-white sm:w-64 ${className}`}
+      className={`flex w-full shrink-0 flex-col border-r border-brand/15 bg-brand text-white dark:border-white/10 dark:bg-brand-900 sm:w-64 ${className}`}
     >
       <div className="relative border-b border-white/10 px-3 py-4 sm:px-4 sm:py-5">
         <div className={`flex items-center justify-center ${onClose ? "pr-10" : ""}`}>

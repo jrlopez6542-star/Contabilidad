@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { assertPermission } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
+import { notifyStockCrossings } from "@/lib/stock-alerts";
 
 export async function createProductAction(formData: FormData) {
   const session = await assertPermission("products:write");
@@ -108,6 +109,23 @@ export async function adjustStockAction(formData: FormData) {
     id,
     `Ajuste stock ${product.sku}: ${product.stock} → ${newStock}`
   );
+  // Soft-fail email if stock crossed minStock (threshold dedupe).
+  if (product.trackStock) {
+    try {
+      await notifyStockCrossings([
+        {
+          productId: product.id,
+          sku: product.sku,
+          name: product.name,
+          previousStock: product.stock,
+          newStock,
+          minStock: product.minStock,
+        },
+      ]);
+    } catch (e) {
+      console.error("[stock-alerts] adjust hook failed", e);
+    }
+  }
   revalidatePath("/products");
   revalidatePath("/dashboard");
   return { ok: true };

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   deleteDraftInvoiceAction,
+  deleteVoidInvoiceAction,
   voidInvoiceAction,
 } from "@/actions/invoices";
 import { Button, LinkButton } from "@/components/ui";
@@ -21,12 +22,10 @@ export function InvoiceRowActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (status === "void") return null;
-
-  async function onDelete() {
+  async function onDeleteDraft() {
     if (
       !confirm(
-        `¿Eliminar el borrador ${number} de forma permanente? Esta acción no se puede deshacer.`
+        `¿Eliminar el borrador ${number} de forma permanente? Esta acción no se puede deshacer. Si era de las últimas del prefijo actual, el próximo número se ajustará.`
       )
     ) {
       return;
@@ -35,6 +34,25 @@ export function InvoiceRowActions({
     setError(null);
     try {
       const res = await deleteDraftInvoiceAction(id);
+      if (res?.error) setError(res.error);
+    } catch {
+      // redirect throws NEXT_REDIRECT
+    }
+    setBusy(false);
+  }
+
+  async function onDeleteVoid() {
+    if (
+      !confirm(
+        `¿Eliminar permanentemente la factura anulada ${number}? Esta acción no se puede deshacer. Si era de las últimas del prefijo actual, el próximo número se ajustará.`
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await deleteVoidInvoiceAction(id);
       if (res?.error) setError(res.error);
     } catch {
       // redirect throws NEXT_REDIRECT
@@ -60,6 +78,15 @@ export function InvoiceRowActions({
     setBusy(false);
   }
 
+  if (
+    status !== "draft" &&
+    status !== "void" &&
+    status !== "issued" &&
+    status !== "paid"
+  ) {
+    return null;
+  }
+
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex flex-wrap justify-end gap-1.5">
@@ -77,11 +104,22 @@ export function InvoiceRowActions({
               variant="danger"
               className="!min-h-11 !px-2.5 !py-1.5 !text-xs sm:!min-h-9"
               disabled={busy}
-              onClick={onDelete}
+              onClick={onDeleteDraft}
             >
               Eliminar
             </Button>
           </>
+        )}
+        {status === "void" && (
+          <Button
+            type="button"
+            variant="danger"
+            className="!min-h-11 !px-2.5 !py-1.5 !text-xs sm:!min-h-9"
+            disabled={busy}
+            onClick={onDeleteVoid}
+          >
+            Eliminar
+          </Button>
         )}
         {(status === "issued" || status === "paid") && (
           <Button

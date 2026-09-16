@@ -23,6 +23,8 @@ type Company = {
   quotePrefix?: string;
   nextQuoteNumber?: number;
   unpaidAlertDays?: number;
+  stockAlertEmails?: string;
+  cashCloseEmails?: string;
 } | null;
 
 export function CompanyForm({
@@ -171,6 +173,33 @@ export function CompanyForm({
         defaultValue={company?.unpaidAlertDays ?? 30}
         disabled={readOnly}
       />
+
+      <div className="space-y-3 rounded-lg border border-brand/15 bg-cream-muted p-3 dark:border-brand-200/25 dark:bg-brand-900/40">
+        <p className="text-sm font-medium text-slate-800 dark:text-brand-100">
+          Correos de notificación (separados por coma)
+        </p>
+        <Input
+          label="Correos alerta de stock"
+          name="stockAlertEmails"
+          placeholder="bodega@empresa.com, admin@empresa.com"
+          defaultValue={company?.stockAlertEmails || ""}
+          disabled={readOnly}
+        />
+        <p className="text-xs text-slate-500 dark:text-brand-200/80">
+          Destinatarios de alerta cuando el stock llega al mínimo. Alternativa: STOCK_ALERT_EMAILS.
+        </p>
+        <Input
+          label="Correos cierre de caja"
+          name="cashCloseEmails"
+          placeholder="caja@empresa.com, contador@empresa.com"
+          defaultValue={company?.cashCloseEmails || ""}
+          disabled={readOnly}
+        />
+        <p className="text-xs text-slate-500 dark:text-brand-200/80">
+          Destinatarios del aviso al cerrar la caja del día (no se mezclan con stock). Alternativa: CASH_CLOSE_EMAILS.
+        </p>
+      </div>
+
       {error && <p className="text-sm text-jam">{error}</p>}
       {msg && <p className="text-sm text-brand">{msg}</p>}
       {!readOnly && <Button type="submit">Guardar</Button>}

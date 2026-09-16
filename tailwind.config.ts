@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,6 +12,10 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        surface: {
+          DEFAULT: "var(--surface)",
+          muted: "var(--surface-muted)",
+        },
         brand: {
           DEFAULT: "#0b3d2e",
           dark: "#07291f",
@@ -23,8 +28,8 @@ const config: Config = {
           900: "#041a14",
         },
         cream: {
-          DEFAULT: "#fff8e7",
-          muted: "#faf6eb",
+          DEFAULT: "var(--cream)",
+          muted: "var(--cream-muted)",
         },
         gold: {
           DEFAULT: "#d97706",

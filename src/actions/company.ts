@@ -72,6 +72,17 @@ export async function updateCompanyAction(formData: FormData) {
     logoUrl = DEFAULT_LOGO;
   }
 
+  const stockAlertEmails = String(formData.get("stockAlertEmails") || "")
+    .split(/[,;\n]+/)
+    .map((e) => e.trim())
+    .filter(Boolean)
+    .join(", ");
+  const cashCloseEmails = String(formData.get("cashCloseEmails") || "")
+    .split(/[,;\n]+/)
+    .map((e) => e.trim())
+    .filter(Boolean)
+    .join(", ");
+
   const data = {
     name: String(formData.get("name") || "").trim(),
     nit: String(formData.get("nit") || "").trim(),
@@ -82,6 +93,8 @@ export async function updateCompanyAction(formData: FormData) {
     invoicePrefix: String(formData.get("invoicePrefix") || "FV").trim() || "FV",
     quotePrefix: String(formData.get("quotePrefix") || "COT").trim() || "COT",
     unpaidAlertDays,
+    stockAlertEmails,
+    cashCloseEmails,
   };
   if (!data.name || !data.nit) {
     return { error: "Razón social y NIT son obligatorios." };

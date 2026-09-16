@@ -3,8 +3,13 @@
 import { useState } from "react";
 import { createUserAction } from "@/actions/users";
 import { Button, Input, Select } from "@/components/ui";
+import { ROLE_LABELS, type Role } from "@/lib/roles";
 
-export function UserCreateForm() {
+export function UserCreateForm({
+  assignableRoles,
+}: {
+  assignableRoles: Role[];
+}) {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -19,14 +24,20 @@ export function UserCreateForm() {
     }
   }
 
+  const defaultRole = assignableRoles.includes("vendedor")
+    ? "vendedor"
+    : assignableRoles[0];
+
   return (
     <form id="create-user-form" action={onSubmit} className="space-y-3">
       <Input label="Nombre" name="name" required />
       <Input label="Correo" name="email" type="email" required />
-      <Select label="Rol" name="role" defaultValue="vendedor" required>
-        <option value="admin">Administrador</option>
-        <option value="vendedor">Vendedor</option>
-        <option value="contador">Contador</option>
+      <Select label="Rol" name="role" defaultValue={defaultRole} required>
+        {assignableRoles.map((r) => (
+          <option key={r} value={r}>
+            {ROLE_LABELS[r]}
+          </option>
+        ))}
       </Select>
       <Input
         label="Contraseña"

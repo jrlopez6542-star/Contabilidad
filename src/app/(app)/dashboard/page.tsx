@@ -16,9 +16,18 @@ import {
   LinkButton,
 } from "@/components/ui";
 import Link from "next/link";
+import { getSession } from "@/lib/auth";
+import { SendStockAlertButton } from "./send-stock-alert";
+import { getLowStockProducts } from "@/lib/stock-alerts";
 
 export default async function DashboardPage() {
   await requirePermission("dashboard:read");
+  const session = await getSession();
+  const canSendStockAlert =
+    session &&
+    (session.role === "superadmin" ||
+      session.role === "admin" ||
+      session.role === "contador");
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -27,7 +36,7 @@ export default async function DashboardPage() {
   const unpaidDays = company?.unpaidAlertDays ?? 30;
   const unpaidCutoff = new Date(now.getTime() - unpaidDays * 24 * 60 * 60 * 1000);
 
-  const [issuedThisMonth, unpaid, expensesMonth, recentInvoices, customers, lowStock] =
+  const [issuedThisMonth, unpaid, expensesMonth, recentInvoices, customers, lowStockProducts] =
     await Promise.all([
       prisma.invoice.findMany({
         where: {
@@ -55,13 +64,8 @@ export default async function DashboardPage() {
           },
         },
       }),
-      prisma.product.findMany({
-        where: { active: true, trackStock: true },
-        orderBy: { stock: "asc" },
-      }),
+      getLowStockProducts(),
     ]);
-
-  const lowStockProducts = lowStock.filter((p) => p.stock <= p.minStock);
   const overdueUnpaid = unpaid.filter(
     (i) => i.issuedAt && i.issuedAt < unpaidCutoff
   );
@@ -106,7 +110,9 @@ export default async function DashboardPage() {
 
       {(overdueUnpaid.length > 0 || lowStockProducts.length > 0) && (
         <div className="mb-6 space-y-3">
-          <h2 className="text-sm font-semibold text-slate-900">Notificaciones</h2>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-brand-100">
+            Notificaciones
+          </h2>
           {overdueUnpaid.length > 0 && (
             <AlertBanner
               tone="danger"
@@ -136,18 +142,54 @@ export default async function DashboardPage() {
             </AlertBanner>
           )}
           {lowStockProducts.length > 0 && (
-            <AlertBanner tone="warning" title="Stock bajo">
-              <ul className="mt-1 list-inside list-disc">
-                {lowStockProducts.slice(0, 8).map((p) => (
-                  <li key={p.id}>
-                    <Link href="/products" className="underline">
-                      {p.sku}
-                    </Link>{" "}
-                    — {p.name}: {p.stock} (mín. {p.minStock})
-                  </li>
-                ))}
-              </ul>
-            </AlertBanner>
+            <Card className="border-amber-300/60 bg-amber-50/80 dark:border-gold/40 dark:bg-gold/10">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-amber-900 dark:text-gold-100">
+                    Alerta de stock bajo ({lowStockProducts.length})
+                  </p>
+                  <p className="mt-1 text-xs text-amber-800/80 dark:text-gold-100/80">
+                    Productos con seguimiento de inventario en o por debajo del
+                    mínimo. Revise reposición en Productos.
+                  </p>
+                  <ul className="mt-3 space-y-1.5 text-sm text-amber-950 dark:text-gold-100">
+                    {lowStockProducts.slice(0, 10).map((p) => (
+                      <li
+                        key={p.id}
+                        className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-amber-200/60 pb-1.5 last:border-0 dark:border-gold/20"
+                      >
+                        <span>
+                          <Link
+                            href="/products"
+                            className="font-medium underline underline-offset-2"
+                          >
+                            {p.sku}
+                          </Link>{" "}
+                          — {p.name}
+                        </span>
+                        <span className="tabular-nums font-semibold">
+                          {p.stock}{" "}
+                          <span className="font-normal opacity-80">
+                            (mín. {p.minStock})
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {lowStockProducts.length > 10 && (
+                    <p className="mt-2 text-xs text-amber-800 dark:text-gold-100/80">
+                      …y {lowStockProducts.length - 10} más
+                    </p>
+                  )}
+                </div>
+                <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                  <LinkButton href="/products" variant="secondary" className="w-full sm:w-auto">
+                    Ver productos
+                  </LinkButton>
+                  {canSendStockAlert ? <SendStockAlertButton /> : null}
+                </div>
+              </div>
+            </Card>
           )}
         </div>
       )}
@@ -181,7 +223,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">
+          <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-brand-100">
             Top clientes (histórico)
           </h2>
           {topCustomers.length === 0 ? (
@@ -205,7 +247,7 @@ export default async function DashboardPage() {
 
         <Card>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-brand-100">
               Facturas recientes
             </h2>
             <Link
@@ -248,7 +290,7 @@ export default async function DashboardPage() {
 
       {unpaid.length > 0 && (
         <div className="mt-6">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-brand-100">
             Facturas por cobrar
           </h2>
           <Table>

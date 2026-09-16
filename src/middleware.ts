@@ -12,7 +12,7 @@ function getSecret() {
 
 /** Role permissions mirrored for Edge (no Prisma). Keep in sync with lib/roles.ts */
 const ROLE_PERMS: Record<string, string[]> = {
-  admin: [
+  superadmin: [
     "users:manage",
     "company:read",
     "company:write",
@@ -31,6 +31,31 @@ const ROLE_PERMS: Record<string, string[]> = {
     "reports:read",
     "backup:export",
     "dashboard:read",
+    "cash:read",
+    "cash:write",
+    "audit:read",
+  ],
+  admin: [
+    "company:read",
+    "company:write",
+    "products:read",
+    "products:write",
+    "customers:read",
+    "customers:write",
+    "invoices:read",
+    "invoices:write",
+    "quotes:read",
+    "quotes:write",
+    "payments:read",
+    "payments:write",
+    "expenses:read",
+    "expenses:write",
+    "reports:read",
+    "backup:export",
+    "dashboard:read",
+    "cash:read",
+    "cash:write",
+    "audit:read",
   ],
   vendedor: [
     "products:read",
@@ -43,6 +68,7 @@ const ROLE_PERMS: Record<string, string[]> = {
     "payments:read",
     "payments:write",
     "dashboard:read",
+    "cash:read",
   ],
   contador: [
     "company:read",
@@ -56,6 +82,9 @@ const ROLE_PERMS: Record<string, string[]> = {
     "expenses:write",
     "reports:read",
     "dashboard:read",
+    "cash:read",
+    "cash:write",
+    "audit:read",
   ],
 };
 
@@ -70,6 +99,8 @@ function permissionForPath(pathname: string): string | null {
   if (pathname.startsWith("/invoices/new")) return "invoices:write";
   if (pathname.startsWith("/invoices")) return "invoices:read";
   if (pathname.startsWith("/payments")) return "payments:read";
+  if (pathname.startsWith("/caja")) return "cash:read";
+  if (pathname.startsWith("/audit")) return "audit:read";
   if (pathname.startsWith("/reports")) return "reports:read";
   if (pathname.startsWith("/backup")) return "backup:export";
   if (pathname.startsWith("/dashboard")) return "dashboard:read";
@@ -81,6 +112,7 @@ function isStaticPublicAsset(pathname: string): boolean {
     pathname.startsWith("/uploads/") ||
     pathname === "/logo-bunuelandia.png" ||
     pathname === "/logo-bunuelandia-sidebar.png" ||
+    pathname === "/logo-bunuelandia-header-dark.png" ||
     pathname === "/logo-bunuelandia-pdf.png" ||
     /\.(?:png|jpe?g|webp|gif|svg|ico|txt|xml|webmanifest)$/i.test(pathname)
   );

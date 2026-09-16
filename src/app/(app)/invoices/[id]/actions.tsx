@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   deleteDraftInvoiceAction,
+  deleteVoidInvoiceAction,
   issueInvoiceAction,
   voidInvoiceAction,
 } from "@/actions/invoices";
@@ -76,7 +77,7 @@ export function InvoiceActions({
               onClick={async () => {
                 if (
                   !confirm(
-                    `¿Eliminar el borrador${label} de forma permanente? Esta acción no se puede deshacer.`
+                    `¿Eliminar el borrador${label} de forma permanente? Esta acción no se puede deshacer. Si era de las últimas del prefijo actual, el próximo número se ajustará.`
                   )
                 ) {
                   return;
@@ -119,6 +120,36 @@ export function InvoiceActions({
             }}
           >
             Anular
+          </Button>
+        )}
+        {status === "void" && (
+          <Button
+            type="button"
+            variant="danger"
+            disabled={busy}
+            className="w-full sm:w-auto"
+            onClick={async () => {
+              if (
+                !confirm(
+                  `¿Eliminar permanentemente la factura anulada${label}? Esta acción no se puede deshacer. Si era de las últimas del prefijo actual, el próximo número se ajustará.`
+                )
+              ) {
+                return;
+              }
+              setBusy(true);
+              setError(null);
+              try {
+                const res = await deleteVoidInvoiceAction(id);
+                if (res?.error) {
+                  setError(res.error);
+                  setBusy(false);
+                }
+              } catch {
+                // redirect
+              }
+            }}
+          >
+            Eliminar anulada
           </Button>
         )}
       </div>

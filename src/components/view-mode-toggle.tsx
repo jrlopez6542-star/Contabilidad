@@ -76,7 +76,7 @@ export function ViewModeToggle({
   if (!ready) {
     return (
       <span
-        className={`inline-flex h-8 w-8 shrink-0 rounded-full border border-brand/10 bg-white/60 ${className}`}
+        className={`inline-flex h-8 w-8 shrink-0 rounded-full border border-brand/10 bg-white/60 dark:border-brand-200/20 dark:bg-brand-900/60 ${className}`}
         aria-hidden
       />
     );
@@ -92,7 +92,7 @@ export function ViewModeToggle({
       onClick={toggle}
       title={nextLabel}
       aria-label={nextLabel}
-      className={`inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-full border border-brand/15 bg-white/70 text-brand shadow-sm backdrop-blur transition hover:bg-brand-50 hover:opacity-100 opacity-70 ${className}`}
+      className={`inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-full border border-brand/15 bg-white/70 text-brand shadow-sm backdrop-blur transition hover:bg-brand-50 hover:opacity-100 opacity-70 dark:border-brand-200/25 dark:bg-brand-800/80 dark:text-brand-100 dark:hover:bg-brand-700 ${className}`}
     >
       {isMobile ? (
         /* Monitor icon → switch to desktop */

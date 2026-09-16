@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 export type LineInput = {
@@ -75,6 +76,44 @@ export async function allocateQuoteNumber() {
     });
     return number;
   });
+}
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Recalculate Company.nextInvoiceNumber from remaining invoices that match
+ * the CURRENT company.invoicePrefix (PREFIX-####). Does not renumber invoices.
+ * Returns the new nextInvoiceNumber (max suffix + 1, or 1 if none).
+ */
+export async function syncNextInvoiceNumber(
+  tx: Prisma.TransactionClient
+): Promise<number> {
+  const company = await tx.company.findFirst();
+  if (!company) return 1;
+
+  const prefix = company.invoicePrefix;
+  const invoices = await tx.invoice.findMany({
+    where: { number: { startsWith: `${prefix}-` } },
+    select: { number: true },
+  });
+
+  const re = new RegExp(`^${escapeRegExp(prefix)}-(\\d+)$`);
+  let max = 0;
+  for (const inv of invoices) {
+    const m = inv.number.match(re);
+    if (!m) continue;
+    const n = parseInt(m[1], 10);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+
+  const next = max > 0 ? max + 1 : 1;
+  await tx.company.update({
+    where: { id: company.id },
+    data: { nextInvoiceNumber: next },
+  });
+  return next;
 }
 
 export async function refreshInvoicePaymentStatus(invoiceId: string) {

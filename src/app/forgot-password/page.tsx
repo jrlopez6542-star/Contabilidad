@@ -7,6 +7,7 @@ import { Button, Card, Input } from "@/components/ui";
 import { CompanyLogo } from "@/components/company-logo";
 import { DEFAULT_COMPANY_NAME, DEFAULT_LOGO } from "@/lib/branding";
 import { ViewModeToggle } from "@/components/view-mode-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +81,10 @@ export default function ForgotPasswordPage() {
           )}
         </Card>
         <div className="mt-6 flex justify-center">
-          <ViewModeToggle />
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <ViewModeToggle />
+          </div>
         </div>
       </div>
     </div>

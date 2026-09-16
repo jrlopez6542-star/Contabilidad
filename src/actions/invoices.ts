@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { assertPermission } from "@/lib/auth";
-import { calcTotals, LineInput } from "@/lib/invoices";
+import { calcTotals, LineInput, syncNextInvoiceNumber } from "@/lib/invoices";
 import { decreaseStockForItems, restoreStockForItems } from "@/lib/inventory";
 import { writeAudit } from "@/lib/audit";
+import { notifyStockCrossings } from "@/lib/stock-alerts";
+import type { StockCrossEvent } from "@/lib/stock-alerts";
 
 const SALE_METHODS = new Set(["efectivo", "transferencia"]);
 
@@ -73,8 +75,9 @@ export async function createInvoiceAction(formData: FormData) {
         }
       }
 
+      let stockCrossings: StockCrossEvent[] = [];
       if (issueNow) {
-        await decreaseStockForItems(tx, computed);
+        stockCrossings = await decreaseStockForItems(tx, computed);
       }
       const number = await allocateInvoiceNumberInTx(tx);
       const created = await tx.invoice.create({
@@ -116,15 +119,22 @@ export async function createInvoiceAction(formData: FormData) {
         });
       }
 
-      return created;
+      return { created, stockCrossings };
     });
+
+    // Soft-fail stock alert after commit
+    try {
+      await notifyStockCrossings(invoice.stockCrossings || []);
+    } catch (e) {
+      console.error("[stock-alerts] createInvoice hook failed", e);
+    }
 
     await writeAudit(
       session,
       issueNow ? "issue" : "create",
       "invoice",
-      invoice.id,
-      `${issueNow ? "Emitió" : "Creó"} factura ${invoice.number}${
+      invoice.created.id,
+      `${issueNow ? "Emitió" : "Creó"} factura ${invoice.created.number}${
         paymentMethod ? ` (${paymentMethod})` : ""
       }`
     );
@@ -134,7 +144,7 @@ export async function createInvoiceAction(formData: FormData) {
     revalidatePath("/customers");
     revalidatePath("/payments");
     revalidatePath("/dashboard");
-    redirect(`/invoices/${invoice.id}`);
+    redirect(`/invoices/${invoice.created.id}`);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "No se pudo crear la factura.";
     if (msg.includes("NEXT_REDIRECT")) throw e;
@@ -223,10 +233,44 @@ export async function deleteDraftInvoiceAction(id: string) {
     return { error: "Solo se pueden eliminar borradores." };
   }
   // Drafts never deduct stock — hard delete is safe (cascade removes items).
-  await prisma.invoice.delete({ where: { id } });
-  await writeAudit(session, "delete", "invoice", id, `Eliminó borrador ${invoice.number}`);
+  const next = await prisma.$transaction(async (tx) => {
+    await tx.invoice.delete({ where: { id } });
+    return syncNextInvoiceNumber(tx);
+  });
+  await writeAudit(
+    session,
+    "delete",
+    "invoice",
+    id,
+    `Eliminó borrador ${invoice.number}; contador sincronizado a ${next}`
+  );
   revalidatePath("/invoices");
   revalidatePath("/dashboard");
+  revalidatePath("/company");
+  redirect("/invoices");
+}
+
+export async function deleteVoidInvoiceAction(id: string) {
+  const session = await assertPermission("invoices:write");
+  const invoice = await prisma.invoice.findUnique({ where: { id } });
+  if (!invoice || invoice.status !== "void") {
+    return { error: "Solo se pueden eliminar facturas anuladas." };
+  }
+  // Void already restored stock and cleared payments — hard delete + sync counter.
+  const next = await prisma.$transaction(async (tx) => {
+    await tx.invoice.delete({ where: { id } });
+    return syncNextInvoiceNumber(tx);
+  });
+  await writeAudit(
+    session,
+    "delete",
+    "invoice",
+    id,
+    `Eliminó factura anulada ${invoice.number}; contador sincronizado a ${next}`
+  );
+  revalidatePath("/invoices");
+  revalidatePath("/dashboard");
+  revalidatePath("/company");
   redirect("/invoices");
 }
 
@@ -253,9 +297,10 @@ export async function issueInvoiceAction(
     return { error: "Seleccione método de pago (Efectivo o Transferencia)." };
   }
 
+  let stockCrossings: StockCrossEvent[] = [];
   try {
-    await prisma.$transaction(async (tx) => {
-      await decreaseStockForItems(tx, invoice.items);
+    stockCrossings = await prisma.$transaction(async (tx) => {
+      const crossings = await decreaseStockForItems(tx, invoice.items);
       await tx.invoice.update({
         where: { id },
         data: {
@@ -275,11 +320,17 @@ export async function issueInvoiceAction(
           },
         });
       }
+      return crossings;
     });
   } catch (e) {
     return {
       error: e instanceof Error ? e.message : "No se pudo emitir la factura.",
     };
+  }
+  try {
+    await notifyStockCrossings(stockCrossings || []);
+  } catch (e) {
+    console.error("[stock-alerts] issueInvoice hook failed", e);
   }
   await writeAudit(
     session,

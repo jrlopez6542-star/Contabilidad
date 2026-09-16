@@ -1,12 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
-import { ROLE_LABELS, type Role } from "@/lib/roles";
+import {
+  ROLE_LABELS,
+  assignableRoles,
+  canManageTargetRole,
+  isRole,
+  type Role,
+} from "@/lib/roles";
 import { Badge, Card, EmptyState, PageHeader, Table } from "@/components/ui";
 import { UserCreateForm } from "./create-form";
 import { UserEditForm } from "./edit-form";
 
 export default async function UsersPage() {
-  await requirePermission("users:manage");
+  const session = await requirePermission("users:manage");
+  const rolesForActor = assignableRoles(session.role);
   const users = await prisma.user.findMany({
     orderBy: [{ active: "desc" }, { name: "asc" }],
     select: {
@@ -23,12 +30,12 @@ export default async function UsersPage() {
     <div>
       <PageHeader
         title="Usuarios"
-        subtitle="Administración de cuentas y roles (admin / vendedor / contador)"
+        subtitle="Administración de cuentas y roles (superusuario / administrador / vendedor / contador)"
       />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="h-fit lg:col-span-1">
           <h2 className="mb-4 text-sm font-semibold">Nuevo usuario</h2>
-          <UserCreateForm />
+          <UserCreateForm assignableRoles={rolesForActor} />
         </Card>
         <div className="lg:col-span-2 space-y-4">
           {users.length === 0 ? (
@@ -75,22 +82,30 @@ export default async function UsersPage() {
               </tbody>
             </Table>
           )}
-          {users.map((u) => (
-            <Card key={`edit-${u.id}`}>
-              <h3 className="mb-3 text-sm font-semibold">
-                Editar: {u.name}
-              </h3>
-              <UserEditForm
-                user={{
-                  id: u.id,
-                  name: u.name,
-                  email: u.email,
-                  role: u.role as Role,
-                  active: u.active,
-                }}
-              />
-            </Card>
-          ))}
+          {users.map((u) => {
+            const targetRole = isRole(u.role) ? u.role : ("vendedor" as Role);
+            return (
+              <Card key={`edit-${u.id}`}>
+                <h3 className="mb-3 text-sm font-semibold">
+                  Editar: {u.name}
+                </h3>
+                <UserEditForm
+                  user={{
+                    id: u.id,
+                    name: u.name,
+                    email: u.email,
+                    role: targetRole,
+                    active: u.active,
+                  }}
+                  assignableRoles={rolesForActor}
+                  canManage={
+                    isRole(u.role) &&
+                    canManageTargetRole(session.role, u.role)
+                  }
+                />
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

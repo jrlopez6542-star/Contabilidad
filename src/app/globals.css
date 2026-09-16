@@ -9,12 +9,27 @@
   --brand: #0b3d2e;
   --cream: #fff8e7;
   --cream-muted: #faf6eb;
+  --surface: #ffffff;
+  --surface-muted: #faf6eb;
   --gold: #d97706;
   --jam: #c41e3a;
 }
 
+.dark {
+  color-scheme: dark;
+  --background: #061510;
+  --foreground: #e8f5f0;
+  --brand: #145a44;
+  --cream: #061510;
+  --cream-muted: #0a1f18;
+  --surface: #0d2a20;
+  --surface-muted: #0f3226;
+  --gold: #f59e0b;
+  --jam: #e11d48;
+}
+
 body {
-  @apply bg-cream text-slate-900 antialiased;
+  @apply bg-cream text-slate-900 antialiased dark:text-brand-100;
 }
 
 /* —— Responsive shell (auto = CSS breakpoints) —— */
@@ -111,4 +126,113 @@ body {
 .app-table-scroll,
 div.overflow-x-auto {
   -webkit-overflow-scrolling: touch;
+}
+
+/* Dark-mode readability for common light surfaces outside ui.tsx */
+.dark .bg-white {
+  background-color: var(--surface);
+}
+
+.dark .bg-white\/60,
+.dark .bg-white\/70 {
+  background-color: rgb(7 41 31 / 0.75);
+}
+
+.dark .hover\:bg-brand-50:hover {
+  background-color: rgb(20 90 68 / 0.35);
+}
+
+.dark .bg-brand-50,
+.dark .bg-brand-50\/60 {
+  background-color: rgb(20 90 68 / 0.25);
+}
+
+.dark .text-slate-900 {
+  color: #e8f5f0;
+}
+
+.dark .text-slate-700 {
+  color: #d1ebe0;
+}
+
+.dark .text-slate-600 {
+  color: #a3d7c1;
+}
+
+.dark .text-slate-500 {
+  color: #8fc9b0;
+}
+
+.dark .text-slate-400 {
+  color: #6ba890;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-300 {
+  border-color: rgb(163 215 193 / 0.2);
+}
+
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(163 215 193 / 0.15);
+}
+
+.dark .bg-gold-50 {
+  background-color: rgb(217 119 6 / 0.15);
+}
+
+.dark .bg-jam-50 {
+  background-color: rgb(196 30 58 / 0.2);
+}
+
+.dark .bg-green-50 {
+  background-color: rgb(20 90 68 / 0.3);
+}
+
+.dark .text-green-800 {
+  color: #a3d7c1;
+}
+
+.dark .text-amber-900 {
+  color: #fef3c7;
+}
+
+.dark .ring-slate-200 {
+  --tw-ring-color: rgb(163 215 193 / 0.25);
+}
+
+/* Brand text/icons readable on deep green surfaces */
+.dark .text-brand {
+  color: #a3d7c1;
+}
+
+.dark .hover\:text-brand:hover {
+  color: #d1ebe0;
+}
+
+.dark .border-brand\/10,
+.dark .border-brand\/15,
+.dark .border-brand\/20 {
+  border-color: rgb(163 215 193 / 0.2);
+}
+
+.dark .border-dashed.border-brand\/20 {
+  border-color: rgb(163 215 193 / 0.3);
+}
+
+.dark code {
+  background-color: rgb(7 41 31 / 0.8);
+}
+
+/* Slate surfaces that stay light without overrides */
+.dark .bg-slate-50 {
+  background-color: var(--surface-muted);
+}
+.dark .bg-slate-100 {
+  background-color: rgb(15 50 38);
+}
+.dark .hover\:bg-slate-50:hover {
+  background-color: rgb(20 90 68 / 0.35);
+}
+.dark .border-slate-100 {
+  border-color: rgb(163 215 193 / 0.18);
 }

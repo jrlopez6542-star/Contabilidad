@@ -16,7 +16,7 @@ model User {
   email        String   @unique
   passwordHash String
   name         String
-  role         String   @default("vendedor") // admin | vendedor | contador
+  role         String   @default("vendedor") // superadmin | admin | vendedor | contador
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -36,6 +36,8 @@ model Company {
   quotePrefix       String @default("COT")
   nextQuoteNumber   Int    @default(1)
   unpaidAlertDays   Int    @default(30)
+  stockAlertEmails  String @default("") // comma-separated; stock low alerts
+  cashCloseEmails   String @default("") // comma-separated; daily cash close notices
 }
 
 model Product {
@@ -150,6 +152,26 @@ model QuoteItem {
   lineSubtotal Float
   lineIva      Float
   lineTotal    Float
+}
+
+
+model CashClose {
+  id             String   @id @default(cuid())
+  /// Calendar day in America/Bogotá as YYYY-MM-DD (unique).
+  date           String   @unique
+  expectedCash   Float    @default(0)
+  countedCash    Float    @default(0)
+  difference     Float    @default(0)
+  notes          String   @default("")
+  closedByUserId String?
+  closedByEmail  String   @default("")
+  status         String   @default("closed") // open|closed
+  /// JSON: { efectivo, transferencia, tarjeta, otro, expensesTotal, cashExpenses }
+  breakdownJson  String   @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model AuditLog {
