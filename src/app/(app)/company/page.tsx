@@ -16,7 +16,7 @@ export default async function CompanyPage() {
         title="Empresa"
         subtitle={
           canWrite
-            ? "Perfil de la compañía y numeración de facturas (preparado para DIAN)"
+            ? "Marca, datos fiscales, numeración y alertas"
             : "Perfil de la compañía (solo lectura)"
         }
       />

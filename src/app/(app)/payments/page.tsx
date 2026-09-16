@@ -90,7 +90,7 @@ export default async function PaymentsPage() {
                     <td className="px-4 py-3">
                       <Link
                         href={`/invoices/${p.invoiceId}`}
-                        className="text-emerald-700 hover:underline"
+                        className="text-brand hover:underline"
                       >
                         {p.invoice.number}
                       </Link>

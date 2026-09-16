@@ -4,8 +4,111 @@
 
 :root {
   color-scheme: light;
+  --background: #fff8e7;
+  --foreground: #0f172a;
+  --brand: #0b3d2e;
+  --cream: #fff8e7;
+  --cream-muted: #faf6eb;
+  --gold: #d97706;
+  --jam: #c41e3a;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-cream text-slate-900 antialiased;
+}
+
+/* —— Responsive shell (auto = CSS breakpoints) —— */
+.app-sidebar-desktop {
+  display: none;
+}
+
+.app-mobile-only {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .app-sidebar-desktop {
+    display: flex;
+  }
+
+  .app-mobile-only {
+    display: none !important;
+  }
+}
+
+/* Forced celular: always drawer + hamburger */
+html[data-view-mode="mobile"] .app-sidebar-desktop {
+  display: none !important;
+}
+
+html[data-view-mode="mobile"] .app-mobile-only {
+  display: flex !important;
+}
+
+/* Forced escritorio: always sidebar; classic desktop min-width */
+html[data-view-mode="desktop"] .app-sidebar-desktop {
+  display: flex !important;
+}
+
+html[data-view-mode="desktop"] .app-mobile-only {
+  display: none !important;
+}
+
+html[data-view-mode="desktop"],
+html[data-view-mode="desktop"] body {
+  min-width: 1024px;
+  overflow-x: auto;
+}
+
+/* Tables / wide content scroll safely on narrow screens */
+.app-scroll-x {
+  @apply -mx-3 overflow-x-auto overscroll-x-contain px-3 sm:mx-0 sm:px-0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent accidental horizontal page scroll from wide children */
+.app-content-clip {
+  @apply max-w-full overflow-x-clip;
+}
+
+
+/* Mobile drawer enter animation */
+@keyframes app-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes app-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.app-drawer-panel {
+  animation: app-drawer-in 0.2s ease-out;
+}
+
+.app-drawer-backdrop {
+  animation: app-backdrop-in 0.2s ease-out;
+}
+
+/* Safer default: avoid page-level horizontal scroll from wide tables/forms */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+
+/* Touch-friendly horizontal table scroll */
+.app-table-scroll,
+div.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
 }

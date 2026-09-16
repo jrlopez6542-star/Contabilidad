@@ -31,7 +31,7 @@ export function ExpenseForm() {
       </Select>
       <Input label="Monto (COP)" name="amount" type="number" min={1} step={1} required />
       <Textarea label="Notas" name="notes" rows={2} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-jam">{error}</p>}
       <Button type="submit" className="w-full">
         Registrar
       </Button>

@@ -13,7 +13,7 @@ export function ToggleProductButton({
     <button
       type="button"
       onClick={() => toggleProductAction(id, !active)}
-      className="text-xs font-medium text-slate-500 hover:text-emerald-700"
+      className="text-xs font-medium text-slate-500 hover:text-brand"
     >
       {active ? "Desactivar" : "Activar"}
     </button>

@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { createInvoiceAction } from "@/actions/invoices";
-import { formatCOP } from "@/lib/format";
+import {
+  createInvoiceAction,
+  findOrCreateCustomerByCedulaAction,
+} from "@/actions/invoices";
+import { formatCOP, SALE_PAYMENT_METHODS } from "@/lib/format";
 import { Button, Card, Input, Select, Textarea } from "@/components/ui";
 
 type Customer = { id: string; name: string; nit: string };
@@ -30,9 +33,14 @@ export function InvoiceForm({
   customers: Customer[];
   products: Product[];
 }) {
+  const [cedula, setCedula] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [customerId, setCustomerId] = useState("");
+  const [customerHint, setCustomerHint] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("efectivo");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
   const [lines, setLines] = useState<Line[]>([
     {
       key: "1",
@@ -94,12 +102,60 @@ export function InvoiceForm({
     setLines((prev) => (prev.length <= 1 ? prev : prev.filter((l) => l.key !== key)));
   }
 
+  function pickExistingCustomer(id: string) {
+    setCustomerId(id);
+    const c = customers.find((x) => x.id === id);
+    if (c) {
+      setCedula(c.nit);
+      setCustomerName(c.name);
+      setCustomerHint(`Cliente existente: ${c.name}`);
+    }
+  }
+
+  async function lookupCedula() {
+    setError(null);
+    setCustomerHint(null);
+    const doc = cedula.trim();
+    if (!doc) {
+      setError("Ingrese la cédula o NIT.");
+      return;
+    }
+    setLookingUp(true);
+    try {
+      const fd = new FormData();
+      fd.set("cedula", doc);
+      if (customerName.trim()) fd.set("name", customerName.trim());
+      const res = await findOrCreateCustomerByCedulaAction(fd);
+      if (res && "error" in res && res.error) {
+        setError(res.error);
+        return;
+      }
+      if (res && "customer" in res && res.customer) {
+        setCustomerId(res.customer.id);
+        setCustomerName(res.customer.name);
+        setCedula(res.customer.nit);
+        setCustomerHint(
+          res.created
+            ? `Cliente nuevo: ${res.customer.name}`
+            : `Cliente encontrado: ${res.customer.name}`
+        );
+      }
+    } finally {
+      setLookingUp(false);
+    }
+  }
+
   async function submit(issueNow: boolean) {
     setError(null);
     const formData = new FormData();
     formData.set("customerId", customerId);
+    formData.set("cedula", cedula.trim());
+    formData.set("customerName", customerName.trim());
     formData.set("notes", notes);
+    formData.set("paymentMethod", paymentMethod);
     formData.set("issueNow", issueNow ? "true" : "false");
+    // Al emitir, registrar pago completo con el método elegido (venta de mostrador).
+    formData.set("markPaid", issueNow ? "true" : "false");
     formData.set(
       "itemsJson",
       JSON.stringify(
@@ -120,32 +176,90 @@ export function InvoiceForm({
     <div className="space-y-4">
       <Card>
         <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Input
+              label="Cédula / NIT"
+              value={cedula}
+              onChange={(e) => {
+                setCedula(e.target.value);
+                setCustomerId("");
+                setCustomerHint(null);
+              }}
+              onBlur={() => {
+                if (cedula.trim()) void lookupCedula();
+              }}
+              placeholder="Ej. 1234567890"
+              required
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full sm:w-auto"
+                onClick={() => void lookupCedula()}
+                disabled={lookingUp}
+              >
+                {lookingUp ? "Buscando…" : "Buscar / crear cliente"}
+              </Button>
+            </div>
+            {customerHint && (
+              <p className="text-xs text-brand">{customerHint}</p>
+            )}
+          </div>
+          <Input
+            label="Nombre (opcional si es nuevo)"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            placeholder={`Cliente ${cedula.trim() || "…"}`}
+          />
           <Select
-            label="Cliente"
-            value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
+            label="Método de pago"
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
             required
           >
-            <option value="">Seleccione…</option>
+            {SALE_PAYMENT_METHODS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="O elegir cliente existente"
+            value={customerId}
+            onChange={(e) => pickExistingCustomer(e.target.value)}
+          >
+            <option value="">— Opcional —</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name} ({c.nit})
               </option>
             ))}
           </Select>
-          <Textarea
-            label="Notas"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-          />
+          <div className="sm:col-span-2">
+            <Textarea
+              label="Notas"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+            />
+          </div>
         </div>
+        <p className="mt-3 text-xs text-slate-500">
+          No es necesario crear el cliente antes: digite la cédula y, si no
+          existe, se crea automáticamente al emitir o al buscar.
+        </p>
       </Card>
 
       <Card>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold">Líneas</h2>
-          <Button type="button" variant="secondary" onClick={addLine}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={addLine}
+          >
             + Línea
           </Button>
         </div>
@@ -182,12 +296,14 @@ export function InvoiceForm({
                 <Input
                   label="Cant."
                   type="number"
-                  min={0.01}
-                  step={0.01}
+                  min={1}
+                  step={1}
+                  inputMode="numeric"
                   value={l.quantity}
-                  onChange={(e) =>
-                    updateLine(l.key, { quantity: Number(e.target.value) })
-                  }
+                  onChange={(e) => {
+                    const n = Math.max(1, Math.round(Number(e.target.value) || 1));
+                    updateLine(l.key, { quantity: n });
+                  }}
                 />
               </div>
               <div className="md:col-span-2">
@@ -218,7 +334,7 @@ export function InvoiceForm({
                 <button
                   type="button"
                   onClick={() => removeLine(l.key)}
-                  className="mb-1 text-xs text-red-600 hover:underline"
+                  className="mb-1 min-h-11 w-full touch-manipulation rounded-lg px-2 text-sm text-jam hover:bg-jam-50 hover:underline sm:min-h-0 sm:w-auto sm:text-xs"
                 >
                   Quitar
                 </button>
@@ -241,19 +357,28 @@ export function InvoiceForm({
       </Card>
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-lg bg-jam-50 px-3 py-2 text-sm text-jam">
           {error}
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" onClick={() => submit(true)}>
-          Emitir factura
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <Button type="button" className="w-full sm:w-auto" onClick={() => submit(true)}>
+          Emitir y cobrar
         </Button>
-        <Button type="button" variant="secondary" onClick={() => submit(false)}>
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full sm:w-auto"
+          onClick={() => submit(false)}
+        >
           Guardar borrador
         </Button>
       </div>
+      <p className="text-xs text-slate-500">
+        «Emitir y cobrar» registra el pago completo con el método seleccionado
+        (Efectivo o Transferencia).
+      </p>
     </div>
   );
 }

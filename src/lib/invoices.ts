@@ -41,8 +41,9 @@ export async function allocateInvoiceNumber() {
     if (!company) {
       company = await tx.company.create({
         data: {
-          name: "Mi Empresa SAS",
+          name: "Buñuelandia",
           nit: "900000000-0",
+          logoUrl: "/logo-bunuelandia.png",
         },
       });
     }
@@ -50,6 +51,27 @@ export async function allocateInvoiceNumber() {
     await tx.company.update({
       where: { id: company.id },
       data: { nextInvoiceNumber: company.nextInvoiceNumber + 1 },
+    });
+    return number;
+  });
+}
+
+export async function allocateQuoteNumber() {
+  return prisma.$transaction(async (tx) => {
+    let company = await tx.company.findFirst();
+    if (!company) {
+      company = await tx.company.create({
+        data: {
+          name: "Buñuelandia",
+          nit: "900000000-0",
+          logoUrl: "/logo-bunuelandia.png",
+        },
+      });
+    }
+    const number = `${company.quotePrefix}-${String(company.nextQuoteNumber).padStart(4, "0")}`;
+    await tx.company.update({
+      where: { id: company.id },
+      data: { nextQuoteNumber: company.nextQuoteNumber + 1 },
     });
     return number;
   });

@@ -63,7 +63,7 @@ export default async function UsersPage() {
                       <Badge
                         className={
                           u.active
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-brand-100 text-brand"
                             : "bg-slate-100 text-slate-600"
                         }
                       >

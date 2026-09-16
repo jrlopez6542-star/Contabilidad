@@ -22,7 +22,13 @@ export function ProductForm() {
       <Input label="Nombre" name="name" required />
       <Input label="Precio (COP sin IVA)" name="price" type="number" min={0} step={1} required />
       <Input label="IVA %" name="ivaRate" type="number" min={0} step={0.01} defaultValue={19} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <Input label="Stock inicial" name="stock" type="number" min={0} step={0.01} defaultValue={0} />
+      <Input label="Stock mínimo (alerta)" name="minStock" type="number" min={0} step={0.01} defaultValue={5} />
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="trackStock" value="true" defaultChecked />
+        Controlar inventario
+      </label>
+      {error && <p className="text-sm text-jam">{error}</p>}
       <Button type="submit" className="w-full">
         Crear
       </Button>

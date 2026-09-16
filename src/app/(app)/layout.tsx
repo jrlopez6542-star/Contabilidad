@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { permissionForPath } from "@/lib/roles";
 import { can } from "@/lib/roles";
-import { Sidebar } from "@/components/sidebar";
 import { headers } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { DEFAULT_COMPANY_NAME, companyLogoSrc } from "@/lib/branding";
+import { AppShell } from "@/components/app-shell";
 
 export default async function AppLayout({
   children,
@@ -13,8 +15,6 @@ export default async function AppLayout({
   const session = await getSession();
   if (!session) redirect("/login");
 
-  // Soft path guard using referer/x-url is unreliable; pages also call requirePermission.
-  // Extra check when Next provides the path via middleware header (set below).
   const path =
     headers().get("x-pathname") ||
     headers().get("x-invoke-path") ||
@@ -26,12 +26,18 @@ export default async function AppLayout({
     }
   }
 
+  const company = await prisma.company.findFirst();
+  const companyName = company?.name || DEFAULT_COMPANY_NAME;
+  const logoUrl = companyLogoSrc(company?.logoUrl);
+
   return (
-    <div className="flex min-h-screen">
-      <Sidebar userName={session.name} userRole={session.role} />
-      <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-6xl px-6 py-8">{children}</div>
-      </main>
-    </div>
+    <AppShell
+      userName={session.name}
+      userRole={session.role}
+      companyName={companyName}
+      logoUrl={logoUrl}
+    >
+      {children}
+    </AppShell>
   );
 }

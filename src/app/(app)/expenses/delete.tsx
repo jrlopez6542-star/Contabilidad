@@ -9,7 +9,7 @@ export function DeleteExpenseButton({ id }: { id: string }) {
       onClick={() => {
         if (confirm("¿Eliminar este gasto?")) deleteExpenseAction(id);
       }}
-      className="text-xs text-red-600 hover:underline"
+      className="text-xs text-jam hover:underline"
     >
       Eliminar
     </button>

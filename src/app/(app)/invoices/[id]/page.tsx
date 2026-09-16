@@ -9,6 +9,7 @@ import {
   INVOICE_STATUS_COLORS,
   INVOICE_STATUS_LABELS,
   PAYMENT_METHODS,
+  SALE_PAYMENT_METHODS,
 } from "@/lib/format";
 import {
   Badge,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui";
 import { InvoiceActions } from "./actions";
 import { PaymentQuickForm } from "./payment-form";
+import { DraftInvoiceEditor } from "./edit-draft";
 
 export default async function InvoiceDetailPage({
   params,
@@ -44,6 +46,18 @@ export default async function InvoiceDetailPage({
   const balance =
     invoice.status === "void" ? 0 : Math.max(0, invoice.total - paid);
 
+  const customers =
+    canWriteInvoice && invoice.status === "draft"
+      ? await prisma.customer.findMany({ orderBy: { name: "asc" } })
+      : [];
+  const products =
+    canWriteInvoice && invoice.status === "draft"
+      ? await prisma.product.findMany({
+          where: { active: true },
+          orderBy: { name: "asc" },
+        })
+      : [];
+
   return (
     <div>
       <PageHeader
@@ -51,25 +65,45 @@ export default async function InvoiceDetailPage({
         subtitle={invoice.customer.name}
         actions={
           <>
-            <LinkButton href={`/invoices/${invoice.id}/pdf`} variant="secondary">
+            <LinkButton
+              href={`/invoices/${invoice.id}/pdf`}
+              variant="secondary"
+              hard
+              className="w-full sm:w-auto"
+            >
               Descargar PDF
             </LinkButton>
-            <LinkButton href="/invoices" variant="ghost">
+            <LinkButton href="/invoices" variant="ghost" className="w-full sm:w-auto">
               Volver
             </LinkButton>
           </>
         }
       />
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <Badge className={INVOICE_STATUS_COLORS[invoice.status]}>
           {INVOICE_STATUS_LABELS[invoice.status]}
         </Badge>
         <span className="text-sm text-slate-500">
           Emisión: {formatDate(invoice.issuedAt)}
         </span>
+        {invoice.paymentMethod && (
+          <span className="text-sm text-slate-600">
+            Método:{" "}
+            <strong>
+              {PAYMENT_METHODS.find((m) => m.value === invoice.paymentMethod)
+                ?.label || invoice.paymentMethod}
+            </strong>
+          </span>
+        )}
         {canWriteInvoice && (
-          <InvoiceActions id={invoice.id} status={invoice.status} />
+          <InvoiceActions
+            id={invoice.id}
+            status={invoice.status}
+            number={invoice.number}
+            initialPaymentMethod={invoice.paymentMethod || "efectivo"}
+            saleMethods={SALE_PAYMENT_METHODS}
+          />
         )}
       </div>
 
@@ -146,6 +180,7 @@ export default async function InvoiceDetailPage({
                   invoiceId={invoice.id}
                   maxAmount={balance}
                   methods={PAYMENT_METHODS}
+                  defaultMethod={invoice.paymentMethod || "transferencia"}
                 />
               </Card>
             )}
@@ -173,13 +208,41 @@ export default async function InvoiceDetailPage({
             )}
             <Link
               href="/payments"
-              className="mt-3 inline-block text-xs text-emerald-700 hover:underline"
+              className="mt-3 inline-block text-xs text-brand hover:underline"
             >
               Ver todos los pagos
             </Link>
           </Card>
         </div>
       </div>
+
+      {canWriteInvoice && invoice.status === "draft" && (
+        <DraftInvoiceEditor
+          invoiceId={invoice.id}
+          initialCustomerId={invoice.customerId}
+          initialNotes={invoice.notes}
+          initialPaymentMethod={invoice.paymentMethod || "efectivo"}
+          initialLines={invoice.items.map((item) => ({
+            productId: item.productId || "",
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            ivaRate: item.ivaRate,
+          }))}
+          customers={customers.map((c) => ({
+            id: c.id,
+            name: c.name,
+            nit: c.nit,
+          }))}
+          products={products.map((p) => ({
+            id: p.id,
+            sku: p.sku,
+            name: p.name,
+            price: p.price,
+            ivaRate: p.ivaRate,
+          }))}
+        />
+      )}
     </div>
   );
 }

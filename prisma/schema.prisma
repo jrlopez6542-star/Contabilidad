@@ -20,6 +20,7 @@ model User {
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Company {
@@ -29,20 +30,28 @@ model Company {
   address           String @default("")
   phone             String @default("")
   email             String @default("")
+  logoUrl           String @default("/logo-bunuelandia.png")
   invoicePrefix     String @default("FV")
   nextInvoiceNumber Int    @default(1)
+  quotePrefix       String @default("COT")
+  nextQuoteNumber   Int    @default(1)
+  unpaidAlertDays   Int    @default(30)
 }
 
 model Product {
-  id        String        @id @default(cuid())
-  sku       String        @unique
-  name      String
-  price     Float // COP sin IVA
-  ivaRate   Float         @default(19) // porcentaje
-  active    Boolean       @default(true)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  items     InvoiceItem[]
+  id         String        @id @default(cuid())
+  sku        String        @unique
+  name       String
+  price      Float // COP sin IVA
+  ivaRate    Float         @default(19) // porcentaje
+  stock      Float         @default(0)
+  minStock   Float         @default(5)
+  trackStock Boolean       @default(true)
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  items      InvoiceItem[]
+  quoteItems QuoteItem[]
 }
 
 model Customer {
@@ -55,6 +64,7 @@ model Customer {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   invoices  Invoice[]
+  quotes    Quote[]
 }
 
 model Invoice {
@@ -66,12 +76,14 @@ model Invoice {
   subtotal   Float         @default(0)
   ivaTotal   Float         @default(0)
   total      Float         @default(0)
-  notes      String        @default("")
-  issuedAt   DateTime?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  items      InvoiceItem[]
-  payments   Payment[]
+  notes         String        @default("")
+  paymentMethod String        @default("") // efectivo|transferencia|tarjeta|otro|""
+  quoteId       String?
+  issuedAt      DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         InvoiceItem[]
+  payments      Payment[]
 }
 
 model InvoiceItem {
@@ -107,4 +119,71 @@ model Expense {
   amount    Float
   notes     String   @default("")
   createdAt DateTime @default(now())
+}
+
+model Quote {
+  id         String      @id @default(cuid())
+  number     String      @unique
+  customerId String
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  status     String      @default("draft") // draft|sent|accepted|rejected|converted
+  subtotal   Float       @default(0)
+  ivaTotal   Float       @default(0)
+  total      Float       @default(0)
+  notes      String      @default("")
+  validUntil DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  items      QuoteItem[]
+}
+
+model QuoteItem {
+  id           String   @id @default(cuid())
+  quoteId      String
+  quote        Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id])
+  description  String
+  quantity     Float
+  unitPrice    Float
+  ivaRate      Float    @default(19)
+  lineSubtotal Float
+  lineIva      Float
+  lineTotal    Float
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  userEmail  String   @default("")
+  action     String // create|update|delete|adjust|issue|void|convert|login
+  entity     String // product|customer|invoice|quote|expense|company|user|payment|stock
+  entityId   String   @default("")
+  summary    String
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String   @default("")
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }

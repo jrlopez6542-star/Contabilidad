@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { assertPermission } from "@/lib/auth";
 import { refreshInvoicePaymentStatus } from "@/lib/invoices";
+import { writeAudit } from "@/lib/audit";
 
 export async function createPaymentAction(formData: FormData) {
-  await assertPermission("payments:write");
+  const session = await assertPermission("payments:write");
   const invoiceId = String(formData.get("invoiceId") || "");
   const amount = Number(formData.get("amount") || 0);
   const method = String(formData.get("method") || "transferencia");
@@ -23,7 +24,7 @@ export async function createPaymentAction(formData: FormData) {
   }
   if (amount <= 0) return { error: "El monto debe ser mayor a 0." };
 
-  await prisma.payment.create({
+  const payment = await prisma.payment.create({
     data: {
       invoiceId,
       amount,
@@ -33,9 +34,17 @@ export async function createPaymentAction(formData: FormData) {
     },
   });
   await refreshInvoicePaymentStatus(invoiceId);
+  await writeAudit(
+    session,
+    "create",
+    "payment",
+    payment.id,
+    `Registró pago ${amount} en ${invoice.number}`
+  );
   revalidatePath("/payments");
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${invoiceId}`);
   revalidatePath("/dashboard");
+  revalidatePath("/reports");
   return { ok: true };
 }

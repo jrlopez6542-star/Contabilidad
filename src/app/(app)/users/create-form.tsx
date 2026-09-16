@@ -39,8 +39,8 @@ export function UserCreateForm() {
         <input type="checkbox" name="active" value="true" defaultChecked />
         Activo
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {msg && <p className="text-sm text-emerald-700">{msg}</p>}
+      {error && <p className="text-sm text-jam">{error}</p>}
+      {msg && <p className="text-sm text-brand">{msg}</p>}
       <Button type="submit">Crear usuario</Button>
     </form>
   );

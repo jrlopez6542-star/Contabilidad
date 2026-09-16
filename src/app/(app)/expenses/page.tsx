@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { requirePermission, getSession } from "@/lib/auth";
 import { can } from "@/lib/roles";
-import { formatCOP, formatDate } from "@/lib/format";
+import { formatCOP, formatDateInput } from "@/lib/format";
 import { Card, EmptyState, PageHeader, Table } from "@/components/ui";
 import { ExpenseForm } from "./form";
-import { DeleteExpenseButton } from "./delete";
+import { ExpenseEditRow } from "./edit-row";
 
 export default async function ExpensesPage() {
   await requirePermission("expenses:read");
@@ -44,19 +44,17 @@ export default async function ExpensesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {expenses.map((e) => (
-                  <tr key={e.id}>
-                    <td className="px-4 py-3">{formatDate(e.date)}</td>
-                    <td className="px-4 py-3">{e.category}</td>
-                    <td className="px-4 py-3 text-slate-500">{e.notes || "—"}</td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {formatCOP(e.amount)}
-                    </td>
-                    {canWrite && (
-                      <td className="px-4 py-3 text-right">
-                        <DeleteExpenseButton id={e.id} />
-                      </td>
-                    )}
-                  </tr>
+                  <ExpenseEditRow
+                    key={e.id}
+                    canWrite={canWrite}
+                    expense={{
+                      id: e.id,
+                      date: formatDateInput(e.date),
+                      category: e.category,
+                      amount: e.amount,
+                      notes: e.notes,
+                    }}
+                  />
                 ))}
               </tbody>
             </Table>

@@ -4,6 +4,8 @@ import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { can, isRole, type Permission, type Role } from "./roles";
+import { isLoginRateLimited, recordLoginAttempt } from "./rate-limit";
+import { writeAudit } from "./audit";
 
 const COOKIE_NAME = "contabilidad_session";
 
@@ -27,6 +29,16 @@ export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
+function cookieOpts(maxAge: number) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge,
+  };
+}
+
 export async function createSession(user: SessionUser) {
   const token = await new SignJWT({
     id: user.id,
@@ -39,23 +51,11 @@ export async function createSession(user: SessionUser) {
     .setExpirationTime("7d")
     .sign(getSecret());
 
-  cookies().set(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  cookies().set(COOKIE_NAME, token, cookieOpts(60 * 60 * 24 * 7));
 }
 
 export async function destroySession() {
-  cookies().set(COOKIE_NAME, "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 0,
-  });
+  cookies().set(COOKIE_NAME, "", cookieOpts(0));
 }
 
 export async function getSession(): Promise<SessionUser | null> {
@@ -113,12 +113,25 @@ export async function assertPermission(
   return session;
 }
 
-export async function login(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.active) return null;
-  if (!isRole(user.role)) return null;
+export async function login(email: string, password: string, ip = "") {
+  const normalized = email.trim().toLowerCase();
+
+  if (await isLoginRateLimited(normalized)) {
+    return { error: "Demasiados intentos fallidos. Intente de nuevo en 15 minutos." } as const;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalized } });
+  if (!user || !user.active || !isRole(user.role)) {
+    await recordLoginAttempt(normalized, false, ip);
+    return null;
+  }
   const ok = await verifyPassword(password, user.passwordHash);
-  if (!ok) return null;
+  if (!ok) {
+    await recordLoginAttempt(normalized, false, ip);
+    return null;
+  }
+
+  await recordLoginAttempt(normalized, true, ip);
   const sessionUser: SessionUser = {
     id: user.id,
     email: user.email,
@@ -126,5 +139,6 @@ export async function login(email: string, password: string) {
     role: user.role,
   };
   await createSession(sessionUser);
+  await writeAudit(sessionUser, "login", "user", user.id, `Inicio de sesión (${user.email})`);
   return sessionUser;
 }

@@ -5,10 +5,15 @@ async function main() {
   await prisma.payment.deleteMany();
   await prisma.invoiceItem.deleteMany();
   await prisma.invoice.deleteMany();
+  await prisma.quoteItem.deleteMany();
+  await prisma.quote.deleteMany();
   await prisma.expense.deleteMany();
   await prisma.product.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.company.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.loginAttempt.deleteMany();
+  await prisma.passwordResetToken.deleteMany();
   await prisma.user.deleteMany();
 
   const [adminHash, vendedorHash, contadorHash] = await Promise.all([
@@ -45,13 +50,17 @@ async function main() {
 
   await prisma.company.create({
     data: {
-      name: "Comercial Andina SAS",
+      name: "Buñuelandia",
       nit: "901234567-8",
       address: "Calle 100 # 19-61, Bogotá D.C.",
       phone: "+57 601 555 0100",
-      email: "facturacion@comercialandina.co",
+      email: "facturacion@bunuelandia.co",
+      logoUrl: "/logo-bunuelandia.png",
       invoicePrefix: "FV",
       nextInvoiceNumber: 3,
+      quotePrefix: "COT",
+      nextQuoteNumber: 2,
+      unpaidAlertDays: 30,
     },
   });
 
@@ -62,6 +71,9 @@ async function main() {
         name: "Consultoría empresarial (hora)",
         price: 180000,
         ivaRate: 19,
+        stock: 0,
+        minStock: 0,
+        trackStock: false,
         active: true,
       },
     }),
@@ -71,6 +83,9 @@ async function main() {
         name: "Soporte técnico mensual",
         price: 450000,
         ivaRate: 19,
+        stock: 0,
+        minStock: 0,
+        trackStock: false,
         active: true,
       },
     }),
@@ -80,6 +95,9 @@ async function main() {
         name: "Licencia software anual",
         price: 1200000,
         ivaRate: 19,
+        stock: 25,
+        minStock: 5,
+        trackStock: true,
         active: true,
       },
     }),
@@ -89,6 +107,21 @@ async function main() {
         name: "Capacitación in-company (día)",
         price: 850000,
         ivaRate: 19,
+        stock: 0,
+        minStock: 0,
+        trackStock: false,
+        active: true,
+      },
+    }),
+    prisma.product.create({
+      data: {
+        sku: "PROD-USB",
+        name: "Memoria USB 64GB",
+        price: 45000,
+        ivaRate: 19,
+        stock: 3,
+        minStock: 10,
+        trackStock: true,
         active: true,
       },
     }),
@@ -127,7 +160,6 @@ async function main() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 5);
 
-  // Paid invoice
   const inv1 = await prisma.invoice.create({
     data: {
       number: "FV-0001",
@@ -165,7 +197,8 @@ async function main() {
     },
   });
 
-  // Unpaid issued invoice
+  // Unpaid issued — make it old enough to trigger overdue alert
+  const oldIssued = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
   await prisma.invoice.create({
     data: {
       number: "FV-0002",
@@ -175,7 +208,7 @@ async function main() {
       ivaTotal: 313500,
       total: 1963500,
       notes: "Soporte + licencia",
-      issuedAt: new Date(now.getFullYear(), now.getMonth(), 12),
+      issuedAt: oldIssued,
       items: {
         create: [
           {
@@ -197,6 +230,38 @@ async function main() {
             lineSubtotal: 1200000,
             lineIva: 228000,
             lineTotal: 1428000,
+          },
+        ],
+      },
+    },
+  });
+  // Stock already decreased conceptually for issued FV-0002 license
+  await prisma.product.update({
+    where: { id: products[2].id },
+    data: { stock: 24 },
+  });
+
+  await prisma.quote.create({
+    data: {
+      number: "COT-0001",
+      customerId: customers[2].id,
+      status: "sent",
+      subtotal: 850000,
+      ivaTotal: 161500,
+      total: 1011500,
+      notes: "Capacitación equipo comercial",
+      validUntil: new Date(now.getFullYear(), now.getMonth() + 1, 15),
+      items: {
+        create: [
+          {
+            productId: products[3].id,
+            description: products[3].name,
+            quantity: 1,
+            unitPrice: 850000,
+            ivaRate: 19,
+            lineSubtotal: 850000,
+            lineIva: 161500,
+            lineTotal: 1011500,
           },
         ],
       },
@@ -238,6 +303,7 @@ async function main() {
   console.log("  vendedor@demo.co / Vendedor123! (vendedor)");
   console.log("  contador@demo.co / Contador123! (contador)");
   console.log("Invoices:", inv1.number, "FV-0002");
+  console.log("Quote: COT-0001");
 }
 
 main()

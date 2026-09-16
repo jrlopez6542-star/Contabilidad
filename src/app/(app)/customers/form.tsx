@@ -21,7 +21,7 @@ export function CustomerForm() {
       <Input label="Correo" name="email" type="email" />
       <Input label="Teléfono" name="phone" />
       <Textarea label="Dirección" name="address" rows={2} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-jam">{error}</p>}
       <Button type="submit" className="w-full">
         Crear
       </Button>

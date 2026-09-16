@@ -3,6 +3,7 @@ import { requirePermission, getSession } from "@/lib/auth";
 import { can } from "@/lib/roles";
 import { Card, EmptyState, PageHeader, Table } from "@/components/ui";
 import { CustomerForm } from "./form";
+import { CustomerEditRow } from "./edit-row";
 
 export default async function CustomersPage() {
   await requirePermission("customers:read");
@@ -27,30 +28,34 @@ export default async function CustomersPage() {
         )}
         <div className={canWrite ? "lg:col-span-2" : "lg:col-span-3"}>
           {customers.length === 0 ? (
-            <EmptyState message="No hay clientes registrados." />
+            <EmptyState message="Aún no hay clientes. Registre el primero para facturar." />
           ) : (
             <Table>
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">Nombre</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">NIT/CC</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">Correo</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">Teléfono</th>
+                  <th className="px-3 py-3 sm:px-4 text-left font-medium text-slate-600">Nombre</th>
+                  <th className="px-3 py-3 sm:px-4 text-left font-medium text-slate-600">NIT/CC</th>
+                  <th className="px-3 py-3 sm:px-4 text-left font-medium text-slate-600">Correo</th>
+                  <th className="px-3 py-3 sm:px-4 text-left font-medium text-slate-600">Teléfono</th>
+                  {canWrite && (
+                    <th className="px-3 py-3 sm:px-4 text-right font-medium text-slate-600"></th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {customers.map((c) => (
-                  <tr key={c.id}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium">{c.name}</p>
-                      {c.address && (
-                        <p className="text-xs text-slate-500">{c.address}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs">{c.nit}</td>
-                    <td className="px-4 py-3">{c.email || "—"}</td>
-                    <td className="px-4 py-3">{c.phone || "—"}</td>
-                  </tr>
+                  <CustomerEditRow
+                    key={c.id}
+                    canWrite={canWrite}
+                    customer={{
+                      id: c.id,
+                      name: c.name,
+                      nit: c.nit,
+                      email: c.email,
+                      phone: c.phone,
+                      address: c.address,
+                    }}
+                  />
                 ))}
               </tbody>
             </Table>

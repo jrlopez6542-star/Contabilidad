@@ -8,10 +8,12 @@ export function PaymentQuickForm({
   invoiceId,
   maxAmount,
   methods,
+  defaultMethod = "transferencia",
 }: {
   invoiceId: string;
   maxAmount: number;
   methods: { value: string; label: string }[];
+  defaultMethod?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
@@ -34,7 +36,7 @@ export function PaymentQuickForm({
         required
         defaultValue={Math.round(maxAmount)}
       />
-      <Select label="Método" name="method" defaultValue="transferencia">
+      <Select label="Método" name="method" defaultValue={defaultMethod || "transferencia"}>
         {methods.map((m) => (
           <option key={m.value} value={m.value}>
             {m.label}
@@ -43,7 +45,7 @@ export function PaymentQuickForm({
       </Select>
       <Input label="Fecha" name="paidAt" type="date" defaultValue={today} />
       <Textarea label="Notas" name="notes" rows={2} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-jam">{error}</p>}
       <Button type="submit" className="w-full">
         Registrar pago
       </Button>

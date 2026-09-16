@@ -22,10 +22,14 @@ const ROLE_PERMS: Record<string, string[]> = {
     "customers:write",
     "invoices:read",
     "invoices:write",
+    "quotes:read",
+    "quotes:write",
     "payments:read",
     "payments:write",
     "expenses:read",
     "expenses:write",
+    "reports:read",
+    "backup:export",
     "dashboard:read",
   ],
   vendedor: [
@@ -34,6 +38,8 @@ const ROLE_PERMS: Record<string, string[]> = {
     "customers:write",
     "invoices:read",
     "invoices:write",
+    "quotes:read",
+    "quotes:write",
     "payments:read",
     "payments:write",
     "dashboard:read",
@@ -43,10 +49,12 @@ const ROLE_PERMS: Record<string, string[]> = {
     "products:read",
     "customers:read",
     "invoices:read",
+    "quotes:read",
     "payments:read",
     "payments:write",
     "expenses:read",
     "expenses:write",
+    "reports:read",
     "dashboard:read",
   ],
 };
@@ -57,18 +65,45 @@ function permissionForPath(pathname: string): string | null {
   if (pathname.startsWith("/expenses")) return "expenses:read";
   if (pathname.startsWith("/products")) return "products:read";
   if (pathname.startsWith("/customers")) return "customers:read";
+  if (pathname.startsWith("/quotes/new")) return "quotes:write";
+  if (pathname.startsWith("/quotes")) return "quotes:read";
   if (pathname.startsWith("/invoices/new")) return "invoices:write";
   if (pathname.startsWith("/invoices")) return "invoices:read";
   if (pathname.startsWith("/payments")) return "payments:read";
+  if (pathname.startsWith("/reports")) return "reports:read";
+  if (pathname.startsWith("/backup")) return "backup:export";
   if (pathname.startsWith("/dashboard")) return "dashboard:read";
   return null;
 }
 
+function isStaticPublicAsset(pathname: string): boolean {
+  return (
+    pathname.startsWith("/uploads/") ||
+    pathname === "/logo-bunuelandia.png" ||
+    pathname === "/logo-bunuelandia-sidebar.png" ||
+    pathname === "/logo-bunuelandia-pdf.png" ||
+    /\.(?:png|jpe?g|webp|gif|svg|ico|txt|xml|webmanifest)$/i.test(pathname)
+  );
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Public static assets must never hit auth redirects (login logo / branding).
+  if (isStaticPublicAsset(pathname)) {
+    return NextResponse.next();
+  }
+
   const isLogin = pathname.startsWith("/login");
+  const isForgot =
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password");
+  const isBrandingApi =
+    pathname === "/api/branding" || pathname.startsWith("/api/branding/");
   const isPublic =
     isLogin ||
+    isForgot ||
+    isBrandingApi ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon");
 
@@ -117,5 +152,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Skip Next internals, favicon, common static assets, and /uploads.
+  // forgot/reset stay in the matcher so isPublic can allow them without auth.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|uploads/|.*\\.(?:png|jpe?g|webp|gif|svg|ico|txt|xml|webmanifest)$).*)",
+  ],
 };

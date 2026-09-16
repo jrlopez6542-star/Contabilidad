@@ -2,15 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { assertPermission, hashPassword } from "@/lib/auth";
+import { assertPermission, hashPassword, requireSession, verifyPassword } from "@/lib/auth";
 import { isRole, ROLES } from "@/lib/roles";
+import { writeAudit } from "@/lib/audit";
 
 function parseRole(value: string) {
   return isRole(value) ? value : null;
 }
 
 export async function createUserAction(formData: FormData) {
-  await assertPermission("users:manage");
+  const session = await assertPermission("users:manage");
   const name = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const role = parseRole(String(formData.get("role") || ""));
@@ -34,7 +35,7 @@ export async function createUserAction(formData: FormData) {
   }
 
   const passwordHash = await hashPassword(password);
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       name,
       email,
@@ -43,6 +44,7 @@ export async function createUserAction(formData: FormData) {
       active,
     },
   });
+  await writeAudit(session, "create", "user", user.id, `Creó usuario ${email} (${role})`);
   revalidatePath("/users");
   return { ok: true };
 }
@@ -84,12 +86,19 @@ export async function updateUserAction(formData: FormData) {
     where: { id },
     data: { name, email, role, active },
   });
+  await writeAudit(
+    session,
+    "update",
+    "user",
+    id,
+    `Actualizó usuario ${email} (${role}${active ? "" : ", inactivo"})`
+  );
   revalidatePath("/users");
   return { ok: true };
 }
 
 export async function setUserPasswordAction(formData: FormData) {
-  await assertPermission("users:manage");
+  const session = await assertPermission("users:manage");
   const id = String(formData.get("id") || "");
   const password = String(formData.get("password") || "");
   if (!id) return { error: "Usuario inválido." };
@@ -98,6 +107,7 @@ export async function setUserPasswordAction(formData: FormData) {
   }
   const passwordHash = await hashPassword(password);
   await prisma.user.update({ where: { id }, data: { passwordHash } });
+  await writeAudit(session, "update", "user", id, "Restableció contraseña de usuario");
   revalidatePath("/users");
   return { ok: true };
 }
@@ -108,13 +118,75 @@ export async function deactivateUserAction(id: string) {
     return { error: "No puede desactivarse a sí mismo." };
   }
   await prisma.user.update({ where: { id }, data: { active: false } });
+  await writeAudit(session, "update", "user", id, "Desactivó usuario");
   revalidatePath("/users");
   return { ok: true };
 }
 
 export async function activateUserAction(id: string) {
-  await assertPermission("users:manage");
+  const session = await assertPermission("users:manage");
   await prisma.user.update({ where: { id }, data: { active: true } });
+  await writeAudit(session, "update", "user", id, "Activó usuario");
   revalidatePath("/users");
+  return { ok: true };
+}
+
+export async function updateOwnProfileAction(formData: FormData) {
+  const session = await requireSession();
+  const name = String(formData.get("name") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+
+  if (!name || !email) {
+    return { error: "Nombre y correo son obligatorios." };
+  }
+
+  const conflict = await prisma.user.findFirst({
+    where: { email, NOT: { id: session.id } },
+  });
+  if (conflict) {
+    return { error: "Ya existe otro usuario con ese correo." };
+  }
+
+  await prisma.user.update({
+    where: { id: session.id },
+    data: { name, email },
+  });
+  await writeAudit(session, "update", "user", session.id, "Actualizó su perfil");
+  revalidatePath("/profile");
+  revalidatePath("/users");
+  return { ok: true };
+}
+
+export async function changeOwnPasswordAction(formData: FormData) {
+  const session = await requireSession();
+  const currentPassword = String(formData.get("currentPassword") || "");
+  const password = String(formData.get("password") || "");
+  const confirmPassword = String(formData.get("confirmPassword") || "");
+
+  if (!currentPassword || !password) {
+    return { error: "Complete todos los campos de contraseña." };
+  }
+  if (password.length < 6) {
+    return { error: "La nueva contraseña debe tener al menos 6 caracteres." };
+  }
+  if (password !== confirmPassword) {
+    return { error: "La confirmación no coincide." };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: session.id } });
+  if (!user) return { error: "Usuario no encontrado." };
+
+  const ok = await verifyPassword(currentPassword, user.passwordHash);
+  if (!ok) {
+    return { error: "La contraseña actual es incorrecta." };
+  }
+
+  const passwordHash = await hashPassword(password);
+  await prisma.user.update({
+    where: { id: session.id },
+    data: { passwordHash },
+  });
+  await writeAudit(session, "update", "user", session.id, "Cambió su contraseña");
+  revalidatePath("/profile");
   return { ok: true };
 }

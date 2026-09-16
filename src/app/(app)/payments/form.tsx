@@ -61,7 +61,7 @@ export function PaymentPageForm({
       </Select>
       <Input label="Fecha" name="paidAt" type="date" defaultValue={today} />
       <Textarea label="Notas" name="notes" rows={2} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-jam">{error}</p>}
       <Button type="submit" className="w-full">
         Registrar
       </Button>

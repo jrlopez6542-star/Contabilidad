@@ -17,7 +17,7 @@ export default async function NewInvoicePage() {
     <div>
       <PageHeader
         title="Nueva factura"
-        subtitle="Agregue líneas, calcule IVA y emita o guarde como borrador"
+        subtitle="Cédula → productos → Efectivo/Transferencia. Sin DIAN."
       />
       <InvoiceForm customers={customers} products={products} />
     </div>

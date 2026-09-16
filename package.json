@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "DATABASE_URL=\"file:./dev.db\" prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
@@ -19,6 +19,7 @@
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "jose": "^6.2.12",
+    "jszip": "^3.10.2",
     "next": "14.2.35",
     "pdfkit": "^0.20.2",
     "react": "^18",

@@ -13,10 +13,16 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+        <h1 className="text-xl font-bold tracking-tight text-brand sm:text-2xl">
+          {title}
+        </h1>
         {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
@@ -30,7 +36,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}
+      className={`rounded-xl border border-brand/10 bg-white p-4 shadow-sm sm:p-5 ${className}`}
     >
       {children}
     </div>
@@ -49,7 +55,7 @@ export function StatCard({
   return (
     <Card>
       <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
+      <p className="mt-2 text-2xl font-bold text-brand">{value}</p>
       {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
     </Card>
   );
@@ -64,14 +70,15 @@ export function Button({
   variant?: "primary" | "secondary" | "danger" | "ghost";
 }) {
   const styles = {
-    primary: "bg-emerald-600 text-white hover:bg-emerald-700",
-    secondary: "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50",
-    danger: "bg-red-600 text-white hover:bg-red-700",
-    ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
+    primary: "bg-brand text-white hover:bg-brand-dark",
+    secondary:
+      "bg-white text-brand border border-brand/20 hover:bg-brand-50",
+    danger: "bg-jam text-white hover:bg-jam-light",
+    ghost: "bg-transparent text-slate-600 hover:bg-cream-muted",
   };
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50 ${styles[variant]} ${className}`}
+      className={`inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition disabled:opacity-50 sm:min-h-10 ${styles[variant]} ${className}`}
       {...props}
     >
       {children}
@@ -84,23 +91,40 @@ export function LinkButton({
   children,
   variant = "primary",
   className = "",
+  download,
+  hard,
 }: {
   href: string;
   children: ReactNode;
   variant?: "primary" | "secondary" | "danger" | "ghost";
   className?: string;
+  /** Force full document navigation (needed for PDF/CSV/ZIP downloads). */
+  download?: boolean | string;
+  hard?: boolean;
 }) {
   const styles = {
-    primary: "bg-emerald-600 text-white hover:bg-emerald-700",
-    secondary: "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50",
-    danger: "bg-red-600 text-white hover:bg-red-700",
-    ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
+    primary: "bg-brand text-white hover:bg-brand-dark",
+    secondary:
+      "bg-white text-brand border border-brand/20 hover:bg-brand-50",
+    danger: "bg-jam text-white hover:bg-jam-light",
+    ghost: "bg-transparent text-slate-600 hover:bg-cream-muted",
   };
+  const cls = `inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition sm:min-h-10 ${styles[variant]} ${className}`;
+  // Next.js <Link> soft-navigates; binary route handlers (PDF/CSV) break and
+  // Chrome shows "esta página no funciona". Use a real <a> for downloads.
+  if (download || hard) {
+    return (
+      <a
+        href={href}
+        className={cls}
+        download={typeof download === "string" ? download : undefined}
+      >
+        {children}
+      </a>
+    );
+  }
   return (
-    <Link
-      href={href}
-      className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition ${styles[variant]} ${className}`}
-    >
+    <Link href={href} className={cls}>
       {children}
     </Link>
   );
@@ -113,9 +137,11 @@ export function Input({
 }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
   return (
     <label className="block text-sm">
-      {label && <span className="mb-1 block font-medium text-slate-700">{label}</span>}
+      {label && (
+        <span className="mb-1 block font-medium text-slate-700">{label}</span>
+      )}
       <input
-        className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${className}`}
+        className={`w-full min-h-11 rounded-lg border border-slate-300 px-3 py-2.5 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted sm:min-h-10 sm:text-sm ${className}`}
         {...props}
       />
     </label>
@@ -130,9 +156,11 @@ export function Select({
 }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string }) {
   return (
     <label className="block text-sm">
-      {label && <span className="mb-1 block font-medium text-slate-700">{label}</span>}
+      {label && (
+        <span className="mb-1 block font-medium text-slate-700">{label}</span>
+      )}
       <select
-        className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${className}`}
+        className={`w-full min-h-11 rounded-lg border border-slate-300 px-3 py-2.5 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted sm:min-h-10 sm:text-sm ${className}`}
         {...props}
       >
         {children}
@@ -148,9 +176,11 @@ export function Textarea({
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }) {
   return (
     <label className="block text-sm">
-      {label && <span className="mb-1 block font-medium text-slate-700">{label}</span>}
+      {label && (
+        <span className="mb-1 block font-medium text-slate-700">{label}</span>
+      )}
       <textarea
-        className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 ${className}`}
+        className={`w-full min-h-[5.5rem] rounded-lg border border-slate-300 px-3 py-2.5 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted sm:text-sm ${className}`}
         {...props}
       />
     </label>
@@ -173,20 +203,64 @@ export function Badge({
   );
 }
 
-export function EmptyState({ message }: { message: string }) {
+export function EmptyState({
+  message,
+  action,
+}: {
+  message: string;
+  action?: ReactNode;
+}) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">
-      {message}
+    <div className="rounded-xl border border-dashed border-brand/20 bg-white px-6 py-14 text-center shadow-sm">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand">
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4m16 0H4"
+          />
+        </svg>
+      </div>
+      <p className="text-sm text-slate-500">{message}</p>
+      {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
 }
 
 export function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
+    <div className="-mx-3 overflow-x-auto overscroll-x-contain rounded-xl border border-brand/10 bg-white shadow-sm sm:mx-0 [-webkit-overflow-scrolling:touch]">
+      <table className="w-full min-w-[40rem] divide-y divide-slate-200 text-sm sm:min-w-full">
         {children}
       </table>
+    </div>
+  );
+}
+
+export function AlertBanner({
+  tone = "warning",
+  title,
+  children,
+}: {
+  tone?: "warning" | "danger" | "info";
+  title: string;
+  children: ReactNode;
+}) {
+  const tones = {
+    warning: "border-gold/30 bg-gold-50 text-amber-900",
+    danger: "border-jam/30 bg-jam-50 text-jam",
+    info: "border-brand/20 bg-brand-50 text-brand",
+  };
+  return (
+    <div className={`rounded-xl border px-4 py-3 text-sm ${tones[tone]}`}>
+      <p className="font-semibold">{title}</p>
+      <div className="mt-1 opacity-90">{children}</div>
     </div>
   );
 }

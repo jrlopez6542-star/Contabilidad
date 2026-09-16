@@ -1,6 +1,6 @@
-# Contabilidad MVP
+# Buñuelandia — Gestión comercial (es-CO / COP)
 
-MVP de **contabilidad, control de ventas y facturación interna** para una sola empresa (single-tenant).
+App de **contabilidad, ventas, cotizaciones e inventario** de **Buñuelandia** (single-tenant). Sin facturación electrónica DIAN. Marca visual: verde `#0b3d2e`, crema `#fff8e7`, oro `#d97706`.
 
 - UI en español (**es-CO**)
 - Moneda **COP**
@@ -40,6 +40,9 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `TURSO_AUTH_TOKEN` | Token de auth Turso (prod) | `eyJ…` |
 | `DATABASE_AUTH_TOKEN` | Alias opcional del token Turso | `eyJ…` |
 | `AUTH_SECRET` | Secreto para firmar la cookie de sesión | cadena larga aleatoria |
+| `APP_URL` | URL pública de la app (enlaces de email) | `https://tu-app.vercel.app` |
+| `RESEND_API_KEY` | API key de [Resend](https://resend.com) para recuperación de contraseña | `re_…` |
+| `RESEND_FROM` | Remitente verificado (pruebas: `onboarding@resend.dev`) | `Buñuelandia <onboarding@resend.dev>` |
 
 - Si `DATABASE_URL` empieza por `file:` → Prisma clásico (SQLite en disco).
 - Si empieza por `libsql://` o `https://` → adapter libSQL (Turso).
@@ -75,6 +78,10 @@ El seed incluye: empresa, 4 productos, 3 clientes, 1 factura pagada (`FV-0001`),
 | Pagos — leer | ✓ | ✓ | ✓ |
 | Pagos — registrar | ✓ | ✓ | ✓ |
 | Gastos — leer / CRUD | ✓ | — | ✓ |
+| Cotizaciones — leer | ✓ | ✓ | ✓ |
+| Cotizaciones — escribir | ✓ | ✓ | — |
+| Reportes | ✓ | — | ✓ |
+| Respaldo / export | ✓ | — | — |
 
 Los usuarios inactivos no pueden iniciar sesión. La desactivación es soft (no se borran cuentas).
 
@@ -89,18 +96,34 @@ Los usuarios inactivos no pueden iniciar sesión. La desactivación es soft (no 
 | `npm run db:seed` | Carga datos demo |
 | `npm run db:setup` | `db:push` + `db:seed` |
 
-## Módulos
+## Módulos (pack profesional)
 
-1. **Auth + roles** — login / logout; roles admin / vendedor / contador
-2. **Usuarios** — CRUD admin, restablecer contraseña, activar/desactivar
-3. **Empresa** — razón social, NIT, dirección, teléfono, prefijo y próximo número de factura
-4. **Productos/servicios** — SKU, nombre, precio, IVA (19% por defecto), activo/inactivo
+1. **Auth + roles** — login rate-limit (5 fallos / 15 min); cookie httpOnly + `secure` en prod; roles admin / vendedor / contador
+2. **Usuarios** — CRUD admin, restablecer contraseña, activar/desactivar; **Mi perfil**
+3. **Empresa / branding** — razón social, NIT, logo (data URL en DB o ruta pública), prefijos FV/COT, días alerta vencidas
+4. **Productos + inventario** — stock / mínimo / trackStock; baja al emitir factura; ajuste de stock (admin); alertas en panel
 5. **Clientes** — nombre, NIT/CC, correo, teléfono, dirección
-6. **Facturas** — líneas, subtotal/IVA/total, estados `draft|issued|paid|void`, numeración secuencial
-7. **Pagos** — cobros contra facturas; marca `paid` cuando el saldo queda cubierto
-8. **Panel** — ventas del mes, por cobrar, top clientes, ingresos vs gastos
-9. **PDF** — descarga de factura (`runtime = "nodejs"`)
-10. **Gastos** — fecha, categoría, monto, notas
+6. **Cotizaciones** — estados `draft|sent|accepted|rejected|converted`; PDF; convertir → factura borrador
+7. **Facturas** — líneas, IVA, estados `draft|issued|paid|void`; PDF profesional con datos de empresa
+8. **Pagos / Gastos** — cobros y gastos por categoría
+9. **Reportes** (`/reports`) — ventas, IVA, CxC, gastos; CSV por sección
+10. **Respaldo** (`/backup`, admin) — ZIP CSV o CSV individuales
+11. **Auditoría** — tabla `AuditLog` en create/update/delete de entidades clave
+12. **Panel** — KPIs + notificaciones (facturas vencidas, stock bajo)
+
+### Migración Turso (schema profesional)
+
+Tras desplegar código nuevo sobre una DB Turso existente:
+
+```bash
+turso db shell contabilidad < turso-migrate-professional.sql
+turso db shell contabilidad < turso-migrate-password-reset.sql
+```
+
+Estos dos archivos son los cambios exactos desde el esquema de producción original;
+aplique `turso-migrate-professional.sql` una sola vez. El segundo usa
+`IF NOT EXISTS`. En DB nueva: `prisma db push` local → dump `.schema` → shell
+Turso, o aplicar el esquema completo.
 
 ## Despliegue en Vercel (free) + Turso
 
@@ -146,13 +169,18 @@ En el proyecto Vercel → **Settings → Environment Variables**:
 | `DATABASE_URL` | `libsql://YOUR-DB-YOUR-ORG.turso.io` |
 | `TURSO_AUTH_TOKEN` | token de `turso db tokens create` |
 | `AUTH_SECRET` | cadena larga aleatoria (p. ej. `openssl rand -base64 32`) |
+| `APP_URL` | URL pública sin slash final (enlaces de reset) |
+| `RESEND_API_KEY` | API key de Resend |
+| `RESEND_FROM` | p. ej. `Buñuelandia <onboarding@resend.dev>` (pruebas) |
 
 `DATABASE_AUTH_TOKEN` es un alias opcional de `TURSO_AUTH_TOKEN`.
+
+Recuperación de contraseña: `/forgot-password` → email vía Resend → `/reset-password?token=…` (token hasheado, 1 h, un solo uso). SQL Turso: `turso-migrate-password-reset.sql`.
 
 ### 4. Deploy
 
 - Conecte el repo (o suba el zip) a Vercel.
-- Framework: Next.js. Build: `npm run build` (ya fuerza `file:` solo para `prisma generate`).
+- Framework: Next.js. Build: `npm run build` (fuerza `DATABASE_URL=file:./dev.db` solo en `prisma generate`; runtime usa Turso).
 - La ruta PDF y `next.config` usan **Node runtime** (no Edge) por `pdfkit` / Prisma.
 
 ### Gotchas

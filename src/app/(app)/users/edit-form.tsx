@@ -116,8 +116,8 @@ export function UserEditForm({ user }: { user: User }) {
         )}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {msg && <p className="text-sm text-emerald-700">{msg}</p>}
+      {error && <p className="text-sm text-jam">{error}</p>}
+      {msg && <p className="text-sm text-brand">{msg}</p>}
     </div>
   );
 }
