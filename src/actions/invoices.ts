@@ -7,6 +7,10 @@ import type { Prisma } from "@prisma/client";
 import { assertPermission } from "@/lib/auth";
 import { calcTotals, LineInput, syncNextInvoiceNumber } from "@/lib/invoices";
 import { decreaseStockForItems, restoreStockForItems } from "@/lib/inventory";
+import {
+  decreasePackagingForItems,
+  restorePackagingForItems,
+} from "@/lib/packaging";
 import { writeAudit } from "@/lib/audit";
 import { notifyStockCrossings } from "@/lib/stock-alerts";
 import type { StockCrossEvent } from "@/lib/stock-alerts";
@@ -104,11 +108,19 @@ export async function createInvoiceAction(formData: FormData) {
       });
 
       let stockCrossings: StockCrossEvent[] = [];
+      let packagingChanged = false;
       if (issueNow) {
-        stockCrossings = await decreaseStockForItems(tx, computed, {
+        const stockMeta = {
           reason: `Venta ${number}`,
-          refType: "invoice",
+          refType: "invoice" as const,
           refId: created.id,
+          refNumber: number,
+          userId: session.id,
+          userEmail: session.email,
+        };
+        stockCrossings = await decreaseStockForItems(tx, computed, stockMeta);
+        packagingChanged = await decreasePackagingForItems(tx, computed, {
+          reason: `Empaque venta ${number}`,
           refNumber: number,
           userId: session.id,
           userEmail: session.email,
@@ -127,7 +139,7 @@ export async function createInvoiceAction(formData: FormData) {
         });
       }
 
-      return { created, stockCrossings };
+      return { created, stockCrossings, packagingChanged };
     });
 
     // Soft-fail stock alert after commit
@@ -149,9 +161,10 @@ export async function createInvoiceAction(formData: FormData) {
 
     revalidatePath("/invoices");
     revalidatePath("/products");
-      revalidatePath("/customers");
+    revalidatePath("/customers");
     revalidatePath("/payments");
     revalidatePath("/dashboard");
+    if (invoice.packagingChanged) revalidatePath("/insumos");
     redirect(`/invoices/${invoice.created.id}`);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "No se pudo crear la factura.";
@@ -306,12 +319,20 @@ export async function issueInvoiceAction(
   }
 
   let stockCrossings: StockCrossEvent[] = [];
+  let packagingChanged = false;
   try {
-    stockCrossings = await prisma.$transaction(async (tx) => {
-      const crossings = await decreaseStockForItems(tx, invoice.items, {
+    const result = await prisma.$transaction(async (tx) => {
+      const stockMeta = {
         reason: `Venta ${invoice.number}`,
-        refType: "invoice",
+        refType: "invoice" as const,
         refId: invoice.id,
+        refNumber: invoice.number,
+        userId: session.id,
+        userEmail: session.email,
+      };
+      const crossings = await decreaseStockForItems(tx, invoice.items, stockMeta);
+      const packaging = await decreasePackagingForItems(tx, invoice.items, {
+        reason: `Empaque venta ${invoice.number}`,
         refNumber: invoice.number,
         userId: session.id,
         userEmail: session.email,
@@ -335,8 +356,10 @@ export async function issueInvoiceAction(
           },
         });
       }
-      return crossings;
+      return { crossings, packaging };
     });
+    stockCrossings = result.crossings;
+    packagingChanged = result.packaging;
   } catch (e) {
     return {
       error: e instanceof Error ? e.message : "No se pudo emitir la factura.",
@@ -359,6 +382,7 @@ export async function issueInvoiceAction(
   revalidatePath("/products");
   revalidatePath("/payments");
   revalidatePath("/dashboard");
+  if (packagingChanged) revalidatePath("/insumos");
   return { ok: true };
 }
 
@@ -382,12 +406,19 @@ export async function voidInvoiceAction(id: string) {
     return { error: "Factura no válida para anular." };
   }
 
-  // issued and paid both deducted stock on emit — restore it.
-  await prisma.$transaction(async (tx) => {
-    await restoreStockForItems(tx, invoice.items, {
+  // issued and paid both deducted stock/packaging on emit — restore them.
+  const packagingChanged = await prisma.$transaction(async (tx) => {
+    const stockMeta = {
       reason: `Anulación ${invoice.number}`,
-      refType: "invoice",
+      refType: "invoice" as const,
       refId: invoice.id,
+      refNumber: invoice.number,
+      userId: session.id,
+      userEmail: session.email,
+    };
+    await restoreStockForItems(tx, invoice.items, stockMeta);
+    const packaging = await restorePackagingForItems(tx, invoice.items, {
+      reason: `Empaque anulación ${invoice.number}`,
       refNumber: invoice.number,
       userId: session.id,
       userEmail: session.email,
@@ -400,6 +431,7 @@ export async function voidInvoiceAction(id: string) {
       where: { id },
       data: { status: "void" },
     });
+    return packaging;
   });
   await writeAudit(
     session,
@@ -415,6 +447,7 @@ export async function voidInvoiceAction(id: string) {
   revalidatePath("/products");
   revalidatePath("/payments");
   revalidatePath("/dashboard");
+  if (packagingChanged) revalidatePath("/insumos");
   return { ok: true };
 }
 

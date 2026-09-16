@@ -48,12 +48,22 @@ export function LoginForm({
     };
   }, []);
 
-  async function onSubmit(formData: FormData) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
     setPending(true);
     setError(null);
-    const result = await loginAction(formData);
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const formData = new FormData(form);
+      const result = await loginAction(formData);
+      if (result?.error) {
+        setError(result.error);
+        setPending(false);
+      }
+      // On success loginAction redirects; keep pending
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo iniciar sesión. Intente de nuevo.");
       setPending(false);
     }
   }
@@ -72,7 +82,7 @@ export function LoginForm({
           </p>
         </div>
         <Card className="border-brand/15 shadow-md">
-          <form action={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <Input
               label="Correo electrónico"
               name="email"

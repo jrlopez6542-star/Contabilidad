@@ -53,13 +53,19 @@ export function UserEditForm({
     else setMsg("Usuario actualizado.");
   }
 
-  async function onPassword(formData: FormData) {
+  async function onPassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
     setError(null);
     setMsg(null);
+    const formData = new FormData(form);
     formData.set("id", user.id);
     const res = await setUserPasswordAction(formData);
     if (res?.error) setError(res.error);
-    else setMsg("Contraseña actualizada.");
+    else {
+      setMsg("Contraseña actualizada.");
+      form.reset();
+    }
   }
 
   return (
@@ -94,13 +100,23 @@ export function UserEditForm({
         </div>
       </form>
 
-      <form action={onPassword} className="flex flex-wrap items-end gap-3">
+      <form onSubmit={onPassword} className="flex flex-wrap items-end gap-3">
         <div className="min-w-[200px] flex-1">
           <PasswordInput
             label="Nueva contraseña"
             name="password"
             required
             minLength={6}
+            autoComplete="new-password"
+          />
+        </div>
+        <div className="min-w-[200px] flex-1">
+          <PasswordInput
+            label="Confirmar contraseña"
+            name="passwordConfirm"
+            required
+            minLength={6}
+            autoComplete="new-password"
           />
         </div>
         <Button type="submit" variant="secondary">

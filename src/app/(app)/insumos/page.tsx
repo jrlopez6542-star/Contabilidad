@@ -19,8 +19,8 @@ export default async function InsumosPage() {
         title="Insumos"
         subtitle={
           canWrite
-            ? "Materias primas e insumos de buñuelos (aparte de productos de venta)"
-            : "Materias primas e insumos (solo lectura)"
+            ? "Materias primas e insumos de buñuelos (aparte de productos de venta). Las ventas de productos C4*/C10* descuentan automáticamente cajas C4/C10."
+            : "Materias primas e insumos (solo lectura). Las ventas C4*/C10* descuentan empaque C4/C10."
         }
       />
       <div className="grid gap-4 lg:grid-cols-3">

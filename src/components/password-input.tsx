@@ -60,9 +60,9 @@ export function PasswordInput({
       )}
       <span className="relative block">
         <input
+          {...props}
           type={visible ? "text" : "password"}
           className={`w-full min-h-11 rounded-lg border border-slate-300 bg-surface py-2.5 pl-3 pr-11 text-base text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted dark:border-brand-200/25 dark:text-brand-50 dark:placeholder:text-brand-200/50 dark:focus:border-brand-200 dark:focus:ring-brand-800 sm:min-h-10 sm:text-sm ${className}`}
-          {...props}
         />
         <button
           type="button"

@@ -77,6 +77,13 @@ export function UserCreateForm({
         minLength={6}
         autoComplete="new-password"
       />
+      <PasswordInput
+        label="Confirmar contraseña"
+        name="passwordConfirm"
+        required
+        minLength={6}
+        autoComplete="new-password"
+      />
       <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-brand-100">
         <input type="checkbox" name="active" value="true" defaultChecked />
         Activo

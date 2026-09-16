@@ -51,7 +51,8 @@ export async function createUserAction(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const role = parseRole(String(formData.get("role") || ""));
-  const password = String(formData.get("password") || "");
+  const password = String(formData.get("password") || "").trim();
+  const passwordConfirm = String(formData.get("passwordConfirm") || "").trim();
   const active =
     formData.get("active") === "on" || formData.get("active") === "true";
 
@@ -60,6 +61,12 @@ export async function createUserAction(formData: FormData) {
   }
   const assignErr = roleNotAllowed(session.role, role);
   if (assignErr) return { error: assignErr };
+  if (!password) {
+    return { error: "La contraseña es obligatoria." };
+  }
+  if (password !== passwordConfirm) {
+    return { error: "Las contraseñas no coinciden." };
+  }
   if (password.length < 6) {
     return { error: "La contraseña debe tener al menos 6 caracteres." };
   }
@@ -189,8 +196,15 @@ export async function updateUserAction(formData: FormData) {
 export async function setUserPasswordAction(formData: FormData) {
   const session = await assertPermission("users:manage");
   const id = String(formData.get("id") || "");
-  const password = String(formData.get("password") || "");
+  const password = String(formData.get("password") || "").trim();
+  const passwordConfirm = String(formData.get("passwordConfirm") || "").trim();
   if (!id) return { error: "Usuario inválido." };
+  if (!password) {
+    return { error: "La contraseña es obligatoria." };
+  }
+  if (password !== passwordConfirm) {
+    return { error: "Las contraseñas no coinciden." };
+  }
   if (password.length < 6) {
     return { error: "La contraseña debe tener al menos 6 caracteres." };
   }

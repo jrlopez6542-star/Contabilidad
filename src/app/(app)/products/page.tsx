@@ -17,7 +17,7 @@ export default async function ProductsPage() {
         title="Productos y servicios"
         subtitle={
           canWrite
-            ? "Catálogo con SKU, precio, IVA e inventario"
+            ? "Catálogo con SKU, precio, IVA e inventario. SKU C4*/C10* descuenta empaque (insumos C4/C10) al facturar."
             : "Catálogo (solo lectura)"
         }
       />
