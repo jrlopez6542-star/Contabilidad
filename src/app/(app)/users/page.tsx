@@ -30,7 +30,7 @@ export default async function UsersPage() {
     <div>
       <PageHeader
         title="Usuarios"
-        subtitle="Administración de cuentas y roles (superusuario / administrador / vendedor / contador)"
+        subtitle="Solo el superusuario puede crear y editar cuentas. Si el correo ya existe, edite el usuario en lugar de crearlo de nuevo."
       />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="h-fit lg:col-span-1">

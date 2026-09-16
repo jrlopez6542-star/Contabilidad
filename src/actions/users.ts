@@ -2,9 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { assertPermission, hashPassword, requireSession, verifyPassword } from "@/lib/auth";
+import {
+  assertPermission,
+  getSession,
+  hashPassword,
+  requireSession,
+  verifyPassword,
+} from "@/lib/auth";
 import {
   assignableRoles,
+  can,
   canManageTargetRole,
   isRole,
   type Role,
@@ -34,7 +41,13 @@ function roleNotAllowed(actorRole: Role, targetRole: Role) {
 }
 
 export async function createUserAction(formData: FormData) {
-  const session = await assertPermission("users:manage");
+  const session = await getSession();
+  if (!session || !can(session.role, "users:manage")) {
+    return {
+      error:
+        "No tiene permiso para crear usuarios. Solo el superusuario puede gestionar cuentas.",
+    };
+  }
   const name = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const role = parseRole(String(formData.get("role") || ""));
@@ -53,22 +66,41 @@ export async function createUserAction(formData: FormData) {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return { error: "Ya existe un usuario con ese correo." };
+    return {
+      error: `Ya existe un usuario con el correo ${email}. Use otro correo o edite ese usuario.`,
+    };
   }
 
-  const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      role,
-      passwordHash,
-      active,
-    },
-  });
-  await writeAudit(session, "create", "user", user.id, `Creó usuario ${email} (${role})`);
-  revalidatePath("/users");
-  return { ok: true };
+  try {
+    const passwordHash = await hashPassword(password);
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        role,
+        passwordHash,
+        active,
+      },
+    });
+    await writeAudit(
+      session,
+      "create",
+      "user",
+      user.id,
+      `Creó usuario ${email} (${role})`
+    );
+    revalidatePath("/users");
+    return { ok: true };
+  } catch (e) {
+    console.error("[createUserAction]", e);
+    const msg = e instanceof Error ? e.message : "";
+    if (/unique|UNIQUE|constraint/i.test(msg)) {
+      return {
+        error: `Ya existe un usuario con el correo ${email}. Use otro correo o edite ese usuario.`,
+      };
+    }
+    return { error: "No se pudo crear el usuario. Intente de nuevo." };
+  }
 }
 
 export async function updateUserAction(formData: FormData) {
