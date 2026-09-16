@@ -151,7 +151,6 @@ export async function adjustStockAction(formData: FormData) {
     }
   }
   revalidatePath("/products");
-  revalidatePath("/kardex");
   revalidatePath("/dashboard");
   return { ok: true };
 }

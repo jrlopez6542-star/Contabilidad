@@ -149,8 +149,7 @@ export async function createInvoiceAction(formData: FormData) {
 
     revalidatePath("/invoices");
     revalidatePath("/products");
-    revalidatePath("/kardex");
-    revalidatePath("/customers");
+      revalidatePath("/customers");
     revalidatePath("/payments");
     revalidatePath("/dashboard");
     redirect(`/invoices/${invoice.created.id}`);
@@ -358,7 +357,6 @@ export async function issueInvoiceAction(
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
   revalidatePath("/products");
-  revalidatePath("/kardex");
   revalidatePath("/payments");
   revalidatePath("/dashboard");
   return { ok: true };
@@ -415,7 +413,6 @@ export async function voidInvoiceAction(id: string) {
   revalidatePath(`/invoices/${id}`);
   revalidatePath("/invoices");
   revalidatePath("/products");
-  revalidatePath("/kardex");
   revalidatePath("/payments");
   revalidatePath("/dashboard");
   return { ok: true };

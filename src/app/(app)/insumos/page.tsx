@@ -2,55 +2,60 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission, getSession } from "@/lib/auth";
 import { can } from "@/lib/roles";
 import { Card, EmptyState, PageHeader, Table } from "@/components/ui";
-import { ProductForm } from "./form";
-import { ProductEditRow } from "./edit-row";
+import { SupplyForm } from "./form";
+import { SupplyEditRow } from "./edit-row";
 
-export default async function ProductsPage() {
-  await requirePermission("products:read");
+export default async function InsumosPage() {
+  await requirePermission("supplies:read");
   const session = await getSession();
-  const canWrite = session ? can(session.role, "products:write") : false;
-  const products = await prisma.product.findMany({ orderBy: { name: "asc" } });
+  const canWrite = session ? can(session.role, "supplies:write") : false;
+  const supplies = await prisma.supply.findMany({
+    orderBy: [{ category: "asc" }, { name: "asc" }],
+  });
 
   return (
     <div>
       <PageHeader
-        title="Productos y servicios"
+        title="Insumos"
         subtitle={
           canWrite
-            ? "Catálogo con SKU, precio, IVA e inventario"
-            : "Catálogo (solo lectura)"
+            ? "Materias primas e insumos de buñuelos (aparte de productos de venta)"
+            : "Materias primas e insumos (solo lectura)"
         }
       />
       <div className="grid gap-4 lg:grid-cols-3">
         {canWrite && (
           <Card className="h-fit !p-4 lg:col-span-1">
             <h2 className="mb-3 text-sm font-semibold text-slate-800 dark:text-brand-100">
-              Nuevo producto
+              Nuevo insumo
             </h2>
-            <ProductForm />
+            <SupplyForm />
           </Card>
         )}
         <div className={canWrite ? "lg:col-span-2" : "lg:col-span-3"}>
-          {products.length === 0 ? (
-            <EmptyState message="Aún no hay productos ni servicios en el catálogo." />
+          {supplies.length === 0 ? (
+            <EmptyState message="Aún no hay insumos. Registra harina, queso, salsas, aceites, empaques y otras materias primas aquí — aparte del catálogo de productos de venta." />
           ) : (
             <Table>
               <thead className="bg-slate-50 dark:bg-brand-900/40">
                 <tr>
                   <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 dark:text-brand-200 sm:px-4">
-                    SKU
+                    Código
                   </th>
                   <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 dark:text-brand-200 sm:px-4">
                     Nombre
                   </th>
-                  <th className="px-3 py-2.5 text-right text-xs font-medium text-slate-600 dark:text-brand-200 sm:px-4">
-                    Precio
+                  <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 dark:text-brand-200 sm:px-4">
+                    Categoría
                   </th>
                   <th className="px-3 py-2.5 text-right text-xs font-medium text-slate-600 dark:text-brand-200 sm:px-4">
-                    IVA
+                    Cantidad
                   </th>
                   <th className="px-3 py-2.5 text-right text-xs font-medium text-slate-600 dark:text-brand-200 sm:px-4">
-                    Stock
+                    Mín.
+                  </th>
+                  <th className="px-3 py-2.5 text-right text-xs font-medium text-slate-600 dark:text-brand-200 sm:px-4">
+                    Costo
                   </th>
                   <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 dark:text-brand-200 sm:px-4">
                     Estado
@@ -59,20 +64,21 @@ export default async function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-brand-200/10">
-                {products.map((p) => (
-                  <ProductEditRow
-                    key={p.id}
+                {supplies.map((s) => (
+                  <SupplyEditRow
+                    key={s.id}
                     canWrite={canWrite}
-                    product={{
-                      id: p.id,
-                      sku: p.sku,
-                      name: p.name,
-                      price: p.price,
-                      ivaRate: p.ivaRate,
-                      stock: p.stock,
-                      minStock: p.minStock,
-                      trackStock: p.trackStock,
-                      active: p.active,
+                    supply={{
+                      id: s.id,
+                      code: s.code,
+                      name: s.name,
+                      category: s.category,
+                      unit: s.unit,
+                      quantity: s.quantity,
+                      minStock: s.minStock,
+                      unitCost: s.unitCost,
+                      notes: s.notes,
+                      active: s.active,
                     }}
                   />
                 ))}

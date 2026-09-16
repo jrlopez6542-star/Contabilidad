@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { adjustStockAction, updateProductAction } from "@/actions/products";
 import { formatCOP } from "@/lib/format";
@@ -87,14 +86,6 @@ export function ProductEditRow({
           </Badge>
         </td>
         <td className="space-x-2 px-3 py-2.5 text-right sm:px-4">
-          {product.trackStock && (
-            <Link
-              href={`/kardex?productId=${product.id}`}
-              className="text-xs font-medium text-slate-500 hover:text-brand hover:underline dark:text-brand-200 dark:hover:text-brand-100"
-            >
-              Kardex
-            </Link>
-          )}
           {canWrite && (
             <>
               <button

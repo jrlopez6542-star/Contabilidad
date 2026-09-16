@@ -32,7 +32,9 @@ export type Permission =
   | "dashboard:read"
   | "cash:read"
   | "cash:write"
-  | "audit:read";
+  | "audit:read"
+  | "supplies:read"
+  | "supplies:write";
 
 const ALL_PERMISSIONS: Permission[] = [
   "users:manage",
@@ -56,6 +58,8 @@ const ALL_PERMISSIONS: Permission[] = [
   "cash:read",
   "cash:write",
   "audit:read",
+  "supplies:read",
+  "supplies:write",
 ];
 
 const ADMIN_PERMISSIONS: Permission[] = ALL_PERMISSIONS.filter(
@@ -94,6 +98,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "cash:read",
     "cash:write",
     "audit:read",
+    "supplies:read",
+    "supplies:write",
   ],
 };
 
@@ -127,7 +133,7 @@ export function navLinksForRole(role: Role) {
     { href: "/caja", label: "Caja del día", permission: "cash:read" },
     { href: "/customers", label: "Clientes", permission: "customers:read" },
     { href: "/products", label: "Productos", permission: "products:read" },
-    { href: "/kardex", label: "Kardex", permission: "products:read" },
+    { href: "/insumos", label: "Insumos", permission: "supplies:read" },
     { href: "/expenses", label: "Gastos", permission: "expenses:read" },
     { href: "/reports", label: "Reportes", permission: "reports:read" },
     { href: "/audit", label: "Auditoría", permission: "audit:read" },
@@ -145,7 +151,7 @@ export function permissionForPath(pathname: string): Permission | null {
   if (pathname.startsWith("/company")) return "company:read";
   if (pathname.startsWith("/expenses")) return "expenses:read";
   if (pathname.startsWith("/products")) return "products:read";
-  if (pathname.startsWith("/kardex")) return "products:read";
+  if (pathname.startsWith("/insumos")) return "supplies:read";
   if (pathname.startsWith("/customers")) return "customers:read";
   if (pathname.startsWith("/quotes/new")) return "quotes:write";
   if (pathname.startsWith("/quotes")) return "quotes:read";

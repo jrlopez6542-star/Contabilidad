@@ -234,3 +234,37 @@ model PasswordResetToken {
 
   @@index([userId])
 }
+
+model Supply {
+  id        String   @id @default(cuid())
+  code      String   @unique  // short code e.g. HAR-01
+  name      String
+  category  String   @default("otro") // harina|queso|salsa|aceite|empaque|otro
+  unit      String   @default("unidad") // kg|g|L|ml|unidad|caja|paquete
+  quantity  Float    @default(0)
+  minStock  Float    @default(0)
+  unitCost  Float    @default(0) // COP optional
+  notes     String   @default("")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  movements SupplyMovement[]
+}
+
+model SupplyMovement {
+  id             String   @id @default(cuid())
+  supplyId       String
+  supply         Supply   @relation(fields: [supplyId], references: [id])
+  type           String   // in | out | adjust
+  quantity       Float    // always positive
+  quantityBefore Float
+  quantityAfter  Float
+  reason         String   @default("")
+  userId         String?
+  userEmail      String   @default("")
+  createdAt      DateTime @default(now())
+
+  @@index([supplyId])
+  @@index([createdAt])
+}
+

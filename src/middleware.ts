@@ -34,6 +34,8 @@ const ROLE_PERMS: Record<string, string[]> = {
     "cash:read",
     "cash:write",
     "audit:read",
+    "supplies:read",
+    "supplies:write",
   ],
   admin: [
     "company:read",
@@ -56,6 +58,8 @@ const ROLE_PERMS: Record<string, string[]> = {
     "cash:read",
     "cash:write",
     "audit:read",
+    "supplies:read",
+    "supplies:write",
   ],
   vendedor: [
     "products:read",
@@ -85,6 +89,8 @@ const ROLE_PERMS: Record<string, string[]> = {
     "cash:read",
     "cash:write",
     "audit:read",
+    "supplies:read",
+    "supplies:write",
   ],
 };
 
@@ -93,6 +99,7 @@ function permissionForPath(pathname: string): string | null {
   if (pathname.startsWith("/company")) return "company:read";
   if (pathname.startsWith("/expenses")) return "expenses:read";
   if (pathname.startsWith("/products")) return "products:read";
+  if (pathname.startsWith("/insumos")) return "supplies:read";
   if (pathname.startsWith("/customers")) return "customers:read";
   if (pathname.startsWith("/quotes/new")) return "quotes:write";
   if (pathname.startsWith("/quotes")) return "quotes:read";
