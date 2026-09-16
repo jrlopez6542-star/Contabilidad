@@ -17,18 +17,19 @@ export function UserCreateForm({
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setError(null);
     setMsg(null);
     setPending(true);
     try {
-      const formData = new FormData(e.currentTarget);
+      const formData = new FormData(form);
       const res = await createUserAction(formData);
       if (res?.error) {
         setError(res.error);
         return;
       }
       setMsg("Usuario creado.");
-      e.currentTarget.reset();
+      form.reset();
     } catch (err) {
       console.error(err);
       setError(
@@ -55,7 +56,13 @@ export function UserCreateForm({
   return (
     <form id="create-user-form" onSubmit={onSubmit} className="space-y-3">
       <Input label="Nombre" name="name" required />
-      <Input label="Correo" name="email" type="email" required autoComplete="off" />
+      <Input
+        label="Correo"
+        name="email"
+        type="email"
+        required
+        autoComplete="off"
+      />
       <Select label="Rol" name="role" defaultValue={defaultRole} required>
         {assignableRoles.map((r) => (
           <option key={r} value={r}>
