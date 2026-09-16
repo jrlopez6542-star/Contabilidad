@@ -17,7 +17,7 @@ export default async function NewInvoicePage() {
     <div>
       <PageHeader
         title="Nueva factura"
-        subtitle="Cédula → productos → Efectivo/Transferencia. Sin DIAN."
+        subtitle="Mostrador: cédula → escanear SKU → cobrar"
       />
       <InvoiceForm customers={customers} products={products} />
     </div>

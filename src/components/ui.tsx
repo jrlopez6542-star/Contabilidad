@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ReactNode } from "react";
+import { forwardRef, ReactNode } from "react";
 
 export function PageHeader({
   title,
@@ -134,11 +134,10 @@ export function LinkButton({
   );
 }
 
-export function Input({
-  label,
-  className = "",
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
+export const Input = forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement> & { label?: string }
+>(function Input({ label, className = "", ...props }, ref) {
   return (
     <label className="block text-sm">
       {label && (
@@ -147,12 +146,13 @@ export function Input({
         </span>
       )}
       <input
+        ref={ref}
         className={`w-full min-h-11 rounded-lg border border-slate-300 bg-surface px-3 py-2.5 text-base text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:bg-cream-muted dark:border-brand-200/25 dark:text-brand-50 dark:placeholder:text-brand-200/50 dark:focus:border-brand-200 dark:focus:ring-brand-800 sm:min-h-10 sm:text-sm ${className}`}
         {...props}
       />
     </label>
   );
-}
+});
 
 export function Select({
   label,

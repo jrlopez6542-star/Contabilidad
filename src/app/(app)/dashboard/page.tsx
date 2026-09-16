@@ -17,6 +17,7 @@ import {
 } from "@/components/ui";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { can } from "@/lib/roles";
 import { SendStockAlertButton } from "./send-stock-alert";
 import { getLowStockProducts } from "@/lib/stock-alerts";
 
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
     (session.role === "superadmin" ||
       session.role === "admin" ||
       session.role === "contador");
+  const canWriteInvoice = session ? can(session.role, "invoices:write") : false;
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -100,10 +102,12 @@ export default async function DashboardPage() {
         subtitle={`Resumen de ${monthLabel}`}
         actions={
           <div className="flex flex-wrap gap-2">
+            {canWriteInvoice ? (
+              <LinkButton href="/invoices/new">Vender ahora</LinkButton>
+            ) : null}
             <LinkButton href="/quotes/new" variant="secondary">
               Cotización
             </LinkButton>
-            <LinkButton href="/invoices/new">Nueva factura</LinkButton>
           </div>
         }
       />
