@@ -4,10 +4,22 @@ import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "contabilidad_session";
 
+let warnedWeakSecret = false;
+
 function getSecret() {
-  return new TextEncoder().encode(
-    process.env.AUTH_SECRET || "dev-secret"
-  );
+  const secret = process.env.AUTH_SECRET;
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!secret || secret === "dev-secret")
+  ) {
+    if (!warnedWeakSecret) {
+      warnedWeakSecret = true;
+      console.error(
+        "[middleware] CRÍTICO: AUTH_SECRET ausente o igual a 'dev-secret' en producción. Configure un secreto fuerte en Vercel."
+      );
+    }
+  }
+  return new TextEncoder().encode(secret || "dev-secret");
 }
 
 /** Role permissions mirrored for Edge (no Prisma). Keep in sync with lib/roles.ts */
