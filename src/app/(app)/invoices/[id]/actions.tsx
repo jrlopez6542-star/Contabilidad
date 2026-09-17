@@ -67,7 +67,7 @@ export function InvoiceActions({
                   setBusy(false);
                   return;
                 }
-                router.push(`/invoices/${id}/ticket/print?next=/mostrador`);
+                router.refresh();
                 setBusy(false);
               }}
             >
