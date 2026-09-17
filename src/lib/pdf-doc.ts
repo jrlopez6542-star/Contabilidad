@@ -1,7 +1,7 @@
 import PDFDocument from "pdfkit";
 import { existsSync, readFileSync } from "fs";
 import path from "path";
-import { formatCOP, formatDate, PAYMENT_METHODS } from "./format";
+import { formatCOP, formatDate, formatDateTime, PAYMENT_METHODS } from "./format";
 
 const BRAND_GREEN = "#0b3d2e";
 const BRAND_CREAM = "#fff8e7";
@@ -438,7 +438,7 @@ export async function buildThermalTicketPdf(opts: {
     y = doc.y + 4;
 
     doc.font("Helvetica").fontSize(7);
-    doc.text(`${opts.dateLabel}: ${formatDate(opts.dateValue)}`, margin, y, {
+    doc.text(`${opts.dateLabel}: ${formatDateTime(opts.dateValue)}`, margin, y, {
       width: contentWidth,
       align: "left",
     });

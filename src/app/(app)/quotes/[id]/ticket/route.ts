@@ -42,7 +42,7 @@ export async function GET(
     const pdf = await buildThermalTicketPdf({
       title: "COTIZACIÓN",
       number: quote.number,
-      dateLabel: "Fecha",
+      dateLabel: "Fecha/hora",
       dateValue: quote.createdAt,
       company,
       party: quote.customer,

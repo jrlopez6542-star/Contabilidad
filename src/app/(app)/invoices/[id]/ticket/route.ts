@@ -44,7 +44,7 @@ export async function GET(
     const pdf = await buildThermalTicketPdf({
       title: "FACTURA DE VENTA",
       number: invoice.number,
-      dateLabel: "Fecha",
+      dateLabel: "Fecha/hora",
       dateValue: invoice.issuedAt || invoice.createdAt,
       company,
       party: invoice.customer,
