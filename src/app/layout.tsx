@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Buñuelandia — Facturación y gestión comercial",
   description:
-    "Sistema de facturación, cotizaciones e inventario de Buñuelandia (COP, es-CO)",
+    "Sistema de facturación e inventario de Buñuelandia (COP, es-CO)",
   applicationName: "Buñuelandia",
   manifest: "/manifest.webmanifest",
   icons: {

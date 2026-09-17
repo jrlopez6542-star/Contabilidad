@@ -78,7 +78,7 @@ export function LoginForm({
             className="mx-auto mb-2 h-32 w-auto max-h-36 object-contain drop-shadow-md sm:h-40 sm:max-h-44"
           />
           <p className="mt-1 text-sm text-slate-600 dark:text-brand-200">
-            Facturación · Cotizaciones · Inventario · COP
+            Facturación · Inventario · COP
           </p>
         </div>
         <Card className="border-brand/15 shadow-md">

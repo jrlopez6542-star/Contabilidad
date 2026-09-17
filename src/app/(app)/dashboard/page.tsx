@@ -112,14 +112,9 @@ export default async function DashboardPage() {
         title="Panel"
         subtitle={`Resumen de ${monthLabel}`}
         actions={
-          <div className="flex flex-wrap gap-2">
-            {canWriteInvoice ? (
-              <LinkButton href="/mostrador">Vender ahora</LinkButton>
-            ) : null}
-            <LinkButton href="/quotes/new" variant="secondary">
-              Cotización
-            </LinkButton>
-          </div>
+          canWriteInvoice ? (
+            <LinkButton href="/mostrador">Vender ahora</LinkButton>
+          ) : undefined
         }
       />
 
