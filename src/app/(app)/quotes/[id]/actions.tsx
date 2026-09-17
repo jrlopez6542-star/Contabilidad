@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   convertQuoteToInvoiceAction,
   deleteQuoteAction,
@@ -15,6 +16,7 @@ export function QuoteActions({
   id: string;
   status: string;
 }) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -29,25 +31,45 @@ export function QuoteActions({
   async function convert() {
     setPending(true);
     setError(null);
-    const res = await convertQuoteToInvoiceAction(id);
-    if (res?.error) {
-      setError(res.error);
-      setPending(false);
+    try {
+      const res = await convertQuoteToInvoiceAction(id);
+      if (res?.error) {
+        setError(res.error);
+        setPending(false);
+      }
+    } catch {
+      // convert may redirect (NEXT_REDIRECT)
     }
   }
 
   async function remove() {
-    if (!confirm("¿Eliminar esta cotización?")) return;
+    if (
+      !confirm(
+        "¿Eliminar esta cotización de forma permanente? Esta acción no se puede deshacer."
+      )
+    ) {
+      return;
+    }
     setPending(true);
     setError(null);
-    const res = await deleteQuoteAction(id);
-    if (res?.error) {
-      setError(res.error);
-      setPending(false);
+    try {
+      const res = await deleteQuoteAction(id);
+      if (res?.error) {
+        setError(res.error);
+        setPending(false);
+        return;
+      }
+      router.push("/quotes");
+      router.refresh();
+    } catch {
+      // leftover NEXT_REDIRECT if any
+      router.push("/quotes");
     }
   }
 
   if (status === "converted") return null;
+
+  const canDelete = ["draft", "sent", "accepted", "rejected"].includes(status);
 
   return (
     <div className="space-y-2">
@@ -80,7 +102,7 @@ export function QuoteActions({
             Rechazar
           </Button>
         )}
-        {status !== "accepted" && (
+        {canDelete && (
           <Button disabled={pending} variant="danger" onClick={remove}>
             Eliminar
           </Button>

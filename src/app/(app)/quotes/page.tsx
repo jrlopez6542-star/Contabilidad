@@ -15,6 +15,7 @@ import {
   PageHeader,
   Table,
 } from "@/components/ui";
+import { QuoteRowActions } from "./row-actions";
 
 export default async function QuotesPage() {
   await requirePermission("quotes:read");
@@ -54,6 +55,11 @@ export default async function QuotesPage() {
               <th className="px-4 py-3 text-left font-medium text-slate-600">Fecha</th>
               <th className="px-4 py-3 text-left font-medium text-slate-600">Estado</th>
               <th className="px-4 py-3 text-right font-medium text-slate-600">Total</th>
+              {canWrite && (
+                <th className="px-4 py-3 text-right font-medium text-slate-600">
+                  Acciones
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -77,6 +83,15 @@ export default async function QuotesPage() {
                 <td className="px-4 py-3 text-right font-medium">
                   {formatCOP(q.total)}
                 </td>
+                {canWrite && (
+                  <td className="px-4 py-3 text-right">
+                    <QuoteRowActions
+                      id={q.id}
+                      status={q.status}
+                      number={q.number}
+                    />
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

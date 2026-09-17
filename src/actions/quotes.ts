@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { assertPermission } from "@/lib/auth";
-import { calcTotals, LineInput } from "@/lib/invoices";
+import { calcTotals, LineInput, syncNextQuoteNumber } from "@/lib/invoices";
 import { writeAudit } from "@/lib/audit";
 
 function parseItems(formData: FormData): LineInput[] {
@@ -173,13 +173,29 @@ export async function setQuoteStatusAction(id: string, status: string) {
 export async function deleteQuoteAction(id: string) {
   const session = await assertPermission("quotes:write");
   const quote = await prisma.quote.findUnique({ where: { id } });
-  if (!quote || quote.status === "converted") {
-    return { error: "No se puede eliminar esta cotización." };
+  if (!quote) {
+    return { error: "Cotización no encontrada." };
   }
-  await prisma.quote.delete({ where: { id } });
-  await writeAudit(session, "delete", "quote", id, `Eliminó cotización ${quote.number}`);
+  if (quote.status === "converted") {
+    return { error: "No se puede eliminar una cotización convertida." };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.quoteItem.deleteMany({ where: { quoteId: id } });
+    await tx.quote.delete({ where: { id } });
+    await syncNextQuoteNumber(tx);
+  });
+
+  await writeAudit(
+    session,
+    "delete",
+    "quote",
+    id,
+    `Eliminó cotización ${quote.number}`
+  );
   revalidatePath("/quotes");
-  redirect("/quotes");
+  revalidatePath("/dashboard");
+  return { ok: true };
 }
 
 /** Convert quote → invoice draft (does not decrease stock until issued). */

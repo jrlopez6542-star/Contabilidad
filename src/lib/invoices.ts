@@ -116,6 +116,39 @@ export async function syncNextInvoiceNumber(
   return next;
 }
 
+/**
+ * Recalculate Company.nextQuoteNumber from remaining quotes that match
+ * the CURRENT company.quotePrefix (PREFIX-####). Does not renumber quotes.
+ */
+export async function syncNextQuoteNumber(
+  tx: Prisma.TransactionClient
+): Promise<number> {
+  const company = await tx.company.findFirst();
+  if (!company) return 1;
+
+  const prefix = company.quotePrefix;
+  const quotes = await tx.quote.findMany({
+    where: { number: { startsWith: `${prefix}-` } },
+    select: { number: true },
+  });
+
+  const re = new RegExp(`^${escapeRegExp(prefix)}-(\d+)$`);
+  let max = 0;
+  for (const q of quotes) {
+    const m = q.number.match(re);
+    if (!m) continue;
+    const n = parseInt(m[1], 10);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+
+  const next = max > 0 ? max + 1 : 1;
+  await tx.company.update({
+    where: { id: company.id },
+    data: { nextQuoteNumber: next },
+  });
+  return next;
+}
+
 export async function refreshInvoicePaymentStatus(invoiceId: string) {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },

@@ -127,6 +127,7 @@ export function canManageTargetRole(actorRole: Role, targetRole: Role): boolean 
 export function navLinksForRole(role: Role) {
   const links: { href: string; label: string; permission?: Permission }[] = [
     { href: "/dashboard", label: "Panel", permission: "dashboard:read" },
+    { href: "/mostrador", label: "Mostrador", permission: "invoices:write" },
     { href: "/quotes", label: "Cotizaciones", permission: "quotes:read" },
     { href: "/invoices", label: "Facturas", permission: "invoices:read" },
     { href: "/payments", label: "Pagos", permission: "payments:read" },
@@ -155,6 +156,7 @@ export function permissionForPath(pathname: string): Permission | null {
   if (pathname.startsWith("/customers")) return "customers:read";
   if (pathname.startsWith("/quotes/new")) return "quotes:write";
   if (pathname.startsWith("/quotes")) return "quotes:read";
+  if (pathname.startsWith("/mostrador")) return "invoices:write";
   if (pathname.startsWith("/invoices/new")) return "invoices:write";
   if (pathname.startsWith("/invoices")) return "invoices:read";
   if (pathname.startsWith("/payments")) return "payments:read";

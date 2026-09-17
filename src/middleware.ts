@@ -103,6 +103,7 @@ function permissionForPath(pathname: string): string | null {
   if (pathname.startsWith("/customers")) return "customers:read";
   if (pathname.startsWith("/quotes/new")) return "quotes:write";
   if (pathname.startsWith("/quotes")) return "quotes:read";
+  if (pathname.startsWith("/mostrador")) return "invoices:write";
   if (pathname.startsWith("/invoices/new")) return "invoices:write";
   if (pathname.startsWith("/invoices")) return "invoices:read";
   if (pathname.startsWith("/payments")) return "payments:read";

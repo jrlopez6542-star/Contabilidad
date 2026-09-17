@@ -114,7 +114,7 @@ export default async function DashboardPage() {
         actions={
           <div className="flex flex-wrap gap-2">
             {canWriteInvoice ? (
-              <LinkButton href="/invoices/new">Vender ahora</LinkButton>
+              <LinkButton href="/mostrador">Vender ahora</LinkButton>
             ) : null}
             <LinkButton href="/quotes/new" variant="secondary">
               Cotización
