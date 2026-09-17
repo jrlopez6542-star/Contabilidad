@@ -42,6 +42,17 @@ function emptyLine(key?: string): Line {
   };
 }
 
+/** Denominaciones rápidas COP para vuelto en mostrador. */
+const CASH_CHIPS = [5000, 10000, 20000, 50000, 100000] as const;
+
+/** Acepta dígitos y separadores de miles (es-CO); COP sin centavos. */
+function parseCOPInput(raw: string): number {
+  const digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return 0;
+  const n = Number(digits);
+  return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
 export function InvoiceForm({
   customers,
   products,
@@ -61,8 +72,12 @@ export function InvoiceForm({
   const [scanHint, setScanHint] = useState<string | null>(null);
   const [stockWarn, setStockWarn] = useState<string | null>(null);
   const [lines, setLines] = useState<Line[]>([emptyLine("1")]);
+  const [cashOpen, setCashOpen] = useState(false);
+  const [receivedInput, setReceivedInput] = useState("");
+  const [charging, setCharging] = useState(false);
 
   const scanRef = useRef<HTMLInputElement>(null);
+  const cashInputRef = useRef<HTMLInputElement>(null);
   const lookingUpRef = useRef(false);
   const issueRef = useRef<() => void>(() => {});
 
@@ -299,8 +314,16 @@ export function InvoiceForm({
     setScanHint(`Sin coincidencia para «${q}»`);
   }
 
-  async function submit(issueNow: boolean) {
+  const receivedAmount = parseCOPInput(receivedInput);
+  const cashDiff = receivedAmount - totals.total;
+  const canConfirmCash = receivedAmount >= totals.total && totals.total > 0;
+
+  async function submit(
+    issueNow: boolean,
+    cash?: { amountReceived: number; changeGiven: number }
+  ) {
     setError(null);
+    if (issueNow) setCharging(true);
     const formData = new FormData();
     formData.set("customerId", customerId);
     formData.set("cedula", cedula.trim());
@@ -310,6 +333,10 @@ export function InvoiceForm({
     formData.set("issueNow", issueNow ? "true" : "false");
     // Al emitir, registrar pago completo con el método elegido (venta de mostrador).
     formData.set("markPaid", issueNow ? "true" : "false");
+    if (cash && paymentMethod === "efectivo") {
+      formData.set("amountReceived", String(cash.amountReceived));
+      formData.set("changeGiven", String(cash.changeGiven));
+    }
     formData.set(
       "itemsJson",
       JSON.stringify(
@@ -323,11 +350,43 @@ export function InvoiceForm({
       )
     );
     const res = await createInvoiceAction(formData);
-    if (res?.error) setError(res.error);
+    // redirect() on success; only reset UI on explicit error
+    if (res?.error) {
+      setError(res.error);
+      setCharging(false);
+    }
+  }
+
+  function openCashTender() {
+    setError(null);
+    setReceivedInput(totals.total > 0 ? String(totals.total) : "");
+    setCashOpen(true);
+  }
+
+  function closeCashTender() {
+    if (charging) return;
+    setCashOpen(false);
+  }
+
+  function requestIssueAndCharge() {
+    if (lookingUp || charging) return;
+    if (paymentMethod === "efectivo") {
+      openCashTender();
+      return;
+    }
+    void submit(true);
+  }
+
+  function confirmCashCharge() {
+    if (!canConfirmCash || charging) return;
+    void submit(true, {
+      amountReceived: receivedAmount,
+      changeGiven: Math.max(0, cashDiff),
+    });
   }
 
   issueRef.current = () => {
-    void submit(true);
+    requestIssueAndCharge();
   };
 
   useEffect(() => {
@@ -340,6 +399,15 @@ export function InvoiceForm({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  useEffect(() => {
+    if (!cashOpen) return;
+    const t = window.setTimeout(() => {
+      cashInputRef.current?.focus();
+      cashInputRef.current?.select();
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [cashOpen]);
 
   return (
     <div className="space-y-4 pb-28 sm:pb-24">
@@ -660,7 +728,7 @@ export function InvoiceForm({
 
       <p className="text-xs text-slate-500">
         «Emitir y cobrar» registra el pago completo con el método seleccionado
-        (Efectivo o Transferencia). Atajo: Ctrl/Cmd+Enter.
+        (Efectivo pide vuelto; Transferencia cobra de una). Atajo: Ctrl/Cmd+Enter.
       </p>
 
       {/* Sticky action bar — mobile-friendly */}
@@ -676,8 +744,8 @@ export function InvoiceForm({
             <Button
               type="button"
               className="w-full sm:w-auto"
-              onClick={() => void submit(true)}
-              disabled={lookingUp}
+              onClick={() => requestIssueAndCharge()}
+              disabled={lookingUp || charging}
             >
               Emitir y cobrar
             </Button>
@@ -686,13 +754,149 @@ export function InvoiceForm({
               variant="secondary"
               className="w-full sm:w-auto"
               onClick={() => void submit(false)}
-              disabled={lookingUp}
+              disabled={lookingUp || charging}
             >
               Guardar borrador
             </Button>
           </div>
         </div>
       </div>
+
+      {cashOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-brand/40 p-0 sm:items-center sm:p-4"
+          role="presentation"
+          onClick={closeCashTender}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cash-tender-title"
+            className="w-full max-w-md rounded-t-2xl border border-brand/15 bg-surface p-5 shadow-xl dark:border-brand-200/20 dark:bg-brand-950 sm:rounded-2xl"
+            style={{
+              paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="cash-tender-title"
+              className="text-lg font-bold text-brand dark:text-brand-100"
+            >
+              Cobro en efectivo
+            </h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-brand-200">
+              Indique con cuánto pagan para calcular el vuelto.
+            </p>
+
+            <div className="mt-4 space-y-4">
+              <div className="flex items-center justify-between rounded-xl bg-brand-50 px-4 py-3 dark:bg-brand-900/60">
+                <span className="text-sm font-medium text-slate-600 dark:text-brand-200">
+                  Total
+                </span>
+                <span className="text-xl font-bold text-brand dark:text-brand-100">
+                  {formatCOP(totals.total)}
+                </span>
+              </div>
+
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-slate-700 dark:text-brand-100">
+                  Recibido
+                </span>
+                <input
+                  ref={cashInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={receivedInput}
+                  onChange={(e) => setReceivedInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      confirmCashCharge();
+                    }
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      closeCashTender();
+                    }
+                  }}
+                  placeholder="0"
+                  disabled={charging}
+                  className="w-full min-h-14 rounded-xl border-2 border-brand/25 bg-surface px-4 py-3 text-center text-3xl font-bold tracking-tight text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:opacity-60 dark:border-brand-200/30 dark:text-brand-50 dark:focus:border-brand-200 dark:focus:ring-brand-800"
+                />
+              </label>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={charging}
+                  onClick={() => setReceivedInput(String(totals.total))}
+                  className="min-h-11 touch-manipulation rounded-xl border border-brand/20 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand dark:border-brand-200/25 dark:bg-brand-800 dark:text-brand-100"
+                >
+                  Exacto
+                </button>
+                {CASH_CHIPS.map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    disabled={charging}
+                    onClick={() => setReceivedInput(String(chip))}
+                    className="min-h-11 touch-manipulation rounded-xl border border-brand/20 bg-surface px-3 py-2 text-sm font-semibold text-brand hover:bg-brand-50 dark:border-brand-200/25 dark:text-brand-100 dark:hover:bg-brand-800"
+                  >
+                    {formatCOP(chip)}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                className={`flex items-center justify-between rounded-xl px-4 py-3 ${
+                  cashDiff >= 0
+                    ? "bg-emerald-50 dark:bg-emerald-950/40"
+                    : "bg-jam-50 dark:bg-jam-950/30"
+                }`}
+              >
+                <span
+                  className={`text-sm font-medium ${
+                    cashDiff >= 0
+                      ? "text-emerald-800 dark:text-emerald-200"
+                      : "text-jam dark:text-jam-100"
+                  }`}
+                >
+                  {cashDiff >= 0 ? "Vuelto" : "Falta"}
+                </span>
+                <span
+                  className={`text-2xl font-bold ${
+                    cashDiff >= 0
+                      ? "text-emerald-700 dark:text-emerald-300"
+                      : "text-jam"
+                  }`}
+                >
+                  {formatCOP(Math.abs(cashDiff))}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
+              <Button
+                type="button"
+                className="w-full sm:flex-1"
+                onClick={confirmCashCharge}
+                disabled={!canConfirmCash || charging}
+              >
+                {charging ? "Cobrando…" : "Confirmar cobro"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full sm:flex-1"
+                onClick={closeCashTender}
+                disabled={charging}
+              >
+                Atrás
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

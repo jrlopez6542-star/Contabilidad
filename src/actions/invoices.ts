@@ -46,6 +46,14 @@ export async function createInvoiceAction(formData: FormData) {
   const paymentMethod = normalizePaymentMethod(
     String(formData.get("paymentMethod") || "")
   );
+  const amountReceivedRaw = String(formData.get("amountReceived") || "").trim();
+  const changeGivenRaw = String(formData.get("changeGiven") || "").trim();
+  const amountReceived = amountReceivedRaw
+    ? Math.round(Number(amountReceivedRaw))
+    : null;
+  const changeGiven = changeGivenRaw
+    ? Math.round(Number(changeGivenRaw))
+    : null;
   const items = parseItems(formData);
 
   if (!customerId && !cedula) {
@@ -132,13 +140,26 @@ export async function createInvoiceAction(formData: FormData) {
       }
 
       if (issueNow && markPaid && paymentMethod && total > 0) {
+        let paymentNotes = "";
+        if (
+          paymentMethod === "efectivo" &&
+          amountReceived != null &&
+          Number.isFinite(amountReceived) &&
+          amountReceived >= 0
+        ) {
+          const vuelto =
+            changeGiven != null && Number.isFinite(changeGiven)
+              ? Math.max(0, changeGiven)
+              : Math.max(0, amountReceived - total);
+          paymentNotes = `Recibido ${amountReceived} · Vuelto ${vuelto}`;
+        }
         await tx.payment.create({
           data: {
             invoiceId: created.id,
             amount: total,
             method: paymentMethod,
             paidAt: new Date(),
-            notes: "",
+            notes: paymentNotes,
           },
         });
       }
