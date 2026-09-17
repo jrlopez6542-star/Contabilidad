@@ -1,18 +1,32 @@
 "use client";
 
-import { useEffect } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 
-/** Prints the same thermal PDF as /invoices/[id]/ticket */
-export default function TicketPrintPage() {
+function TicketPrintInner() {
   const params = useParams();
+  const search = useSearchParams();
   const id = String(params?.id || "");
+  const nextRaw = search.get("next") || `/invoices/${id}`;
+  const next = nextRaw.startsWith("/") ? nextRaw : `/invoices/${id}`;
 
   useEffect(() => {
     if (!id) return;
     let objectUrl: string | null = null;
     let iframe: HTMLIFrameElement | null = null;
     let cancelled = false;
+    let fallbackTimer: number | undefined;
+
+    const goNext = () => {
+      if (cancelled) return;
+      cancelled = true;
+      window.location.href = next;
+    };
+
+    const onAfterPrint = () => {
+      window.setTimeout(goNext, 300);
+    };
+    window.addEventListener("afterprint", onAfterPrint);
 
     (async () => {
       try {
@@ -39,6 +53,7 @@ export default function TicketPrintPage() {
         await new Promise((r) => setTimeout(r, 500));
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
+        fallbackTimer = window.setTimeout(goNext, 120_000);
       } catch (e) {
         console.error(e);
         window.location.href = `/invoices/${id}/ticket`;
@@ -47,14 +62,38 @@ export default function TicketPrintPage() {
 
     return () => {
       cancelled = true;
+      window.removeEventListener("afterprint", onAfterPrint);
+      if (fallbackTimer) window.clearTimeout(fallbackTimer);
       if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [id]);
+  }, [id, next]);
 
   return (
-    <p style={{ fontFamily: "system-ui", padding: 16 }}>
-      Preparando ticket PDF para imprimir…
-    </p>
+    <div style={{ fontFamily: "system-ui", padding: 16 }}>
+      <p>Preparando ticket para imprimir…</p>
+      <p style={{ fontSize: 13, color: "#666", marginTop: 8 }}>
+        Al cerrar la impresión volverás al mostrador.
+      </p>
+      <p style={{ marginTop: 16 }}>
+        <a href={next}>Continuar sin esperar</a>
+        {" · "}
+        <a href={`/invoices/${id}`}>Ver factura</a>
+      </p>
+    </div>
+  );
+}
+
+export default function TicketPrintPage() {
+  return (
+    <Suspense
+      fallback={
+        <p style={{ fontFamily: "system-ui", padding: 16 }}>
+          Preparando ticket…
+        </p>
+      }
+    >
+      <TicketPrintInner />
+    </Suspense>
   );
 }

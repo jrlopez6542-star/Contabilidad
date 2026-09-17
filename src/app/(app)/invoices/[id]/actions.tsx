@@ -62,8 +62,12 @@ export function InvoiceActions({
                   paymentMethod,
                   markPaid: true,
                 });
-                if (res?.error) setError(res.error);
-                else router.refresh();
+                if (res?.error) {
+                  setError(res.error);
+                  setBusy(false);
+                  return;
+                }
+                router.push(`/invoices/${id}/ticket/print?next=/mostrador`);
                 setBusy(false);
               }}
             >

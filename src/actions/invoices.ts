@@ -176,6 +176,9 @@ export async function createInvoiceAction(formData: FormData) {
     revalidatePath("/payments");
     revalidatePath("/dashboard");
     if (invoice.packagingChanged) revalidatePath("/insumos");
+    if (issueNow) {
+      redirect(`/invoices/${invoice.created.id}/ticket/print?next=/mostrador`);
+    }
     redirect(`/invoices/${invoice.created.id}`);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "No se pudo crear la factura.";
