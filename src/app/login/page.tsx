@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import {
   companyLogoSrc,
@@ -21,5 +22,9 @@ export default async function LoginPage() {
   } catch {
     /* keep defaults */
   }
-  return <LoginForm companyName={companyName} logoUrl={logoUrl} />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-cream" />}>
+      <LoginForm companyName={companyName} logoUrl={logoUrl} />
+    </Suspense>
+  );
 }

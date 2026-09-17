@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { loginAction } from "@/actions/auth";
 import { Button, Card, Input } from "@/components/ui";
@@ -21,8 +22,10 @@ export function LoginForm({
   companyName?: string;
   logoUrl?: string;
 } = {}) {
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const idleMsg = searchParams.get("msg");
   const [companyName, setCompanyName] = useState(initialName);
   const [logoUrl, setLogoUrl] = useState(companyLogoSrc(initialLogo));
 
@@ -96,6 +99,11 @@ export function LoginForm({
               required
               autoComplete="current-password"
             />
+            {idleMsg && !error && (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-brand-800 dark:text-brand-100">
+                {idleMsg}
+              </p>
+            )}
             {error && (
               <p className="rounded-lg bg-jam-50 px-3 py-2 text-sm text-jam">
                 {error}

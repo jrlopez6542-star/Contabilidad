@@ -28,3 +28,10 @@ export async function logoutAction() {
   await destroySession();
   redirect("/login");
 }
+
+/** Cierra sesión sin redirect (para idle / pestaña oculta desde el cliente). */
+export async function endSessionAction() {
+  await destroySession();
+  return { ok: true as const };
+}
+
