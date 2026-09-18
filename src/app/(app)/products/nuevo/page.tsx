@@ -1,8 +1,28 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { requirePermission } from "@/lib/auth";
+import { Card, PageHeader } from "@/components/ui";
+import { ProductForm } from "../form";
 
-/** Alta de producto vive en el Panel (desplegable). */
-export default async function NuevoProductoRedirectPage() {
+export default async function NuevoProductoPage() {
   await requirePermission("products:write");
-  redirect("/dashboard");
+
+  return (
+    <div>
+      <PageHeader
+        title="Nuevo producto"
+        subtitle="Alta de SKU, precio, IVA e inventario"
+      />
+      <p className="mb-4">
+        <Link
+          href="/products"
+          className="text-sm font-medium text-brand hover:underline"
+        >
+          ← Volver al catálogo
+        </Link>
+      </p>
+      <Card className="max-w-lg">
+        <ProductForm redirectTo="/products" />
+      </Card>
+    </div>
+  );
 }

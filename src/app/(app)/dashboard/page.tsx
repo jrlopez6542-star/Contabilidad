@@ -19,7 +19,6 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { can } from "@/lib/roles";
 import { SendStockAlertButton } from "./send-stock-alert";
-import { NuevoProductoPanel } from "./nuevo-producto-panel";
 import {
   getLowPackagingSupplies,
   getLowStockProducts,
@@ -34,7 +33,6 @@ export default async function DashboardPage() {
       session.role === "admin" ||
       session.role === "contador");
   const canWriteInvoice = session ? can(session.role, "invoices:write") : false;
-  const canWriteProducts = session ? can(session.role, "products:write") : false;
   const lastSale = canWriteInvoice
     ? await prisma.invoice.findFirst({
         where: { status: { in: ["issued", "paid"] } },
@@ -156,7 +154,6 @@ export default async function DashboardPage() {
               </div>
             )}
           </div>
-          {canWriteProducts && <NuevoProductoPanel />}
         </section>
       )}
 

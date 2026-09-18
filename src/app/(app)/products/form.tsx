@@ -1,17 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createProductAction } from "@/actions/products";
 import { Button, Input } from "@/components/ui";
 
-export function ProductForm() {
+type ProductFormProps = {
+  redirectTo?: string;
+};
+
+export function ProductForm({ redirectTo }: ProductFormProps = {}) {
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   async function onSubmit(formData: FormData) {
     setError(null);
     const res = await createProductAction(formData);
     if (res?.error) setError(res.error);
-    else {
+    else if (redirectTo) {
+      router.push(redirectTo);
+      router.refresh();
+    } else {
       (document.getElementById("product-form") as HTMLFormElement)?.reset();
     }
   }
