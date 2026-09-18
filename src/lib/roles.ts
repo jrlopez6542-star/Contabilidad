@@ -103,6 +103,12 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
 };
 
+export type NavLink = {
+  href: string;
+  label: string;
+  permission?: Permission;
+};
+
 export function isRole(value: string): value is Role {
   return (ROLES as readonly string[]).includes(value);
 }
@@ -123,9 +129,62 @@ export function canManageTargetRole(actorRole: Role, targetRole: Role): boolean 
   return actorRole === "superadmin" && isRole(targetRole);
 }
 
-/** Nav links filtered by role. "Mi perfil" is always included for any logged-in user. */
+function filterLinks(role: Role, links: NavLink[]): NavLink[] {
+  return links.filter((l) => !l.permission || can(role, l.permission));
+}
+
+/**
+ * Slim day-to-day POS sidebar: cobrar, buscar/stock, facturas (opcional),
+ * panel, perfil. Admin heavy links live in the gear menu.
+ */
+export function posNavLinks(role: Role): NavLink[] {
+  const links: NavLink[] = [
+    { href: "/dashboard", label: "Panel", permission: "dashboard:read" },
+    { href: "/mostrador", label: "Cobrar", permission: "invoices:write" },
+    { href: "/products", label: "Buscar producto", permission: "products:read" },
+    { href: "/stock-rapido", label: "Stock / precio", permission: "products:read" },
+    { href: "/invoices", label: "Facturas", permission: "invoices:read" },
+    { href: "/profile", label: "Mi perfil" },
+  ];
+  return filterLinks(role, links);
+}
+
+/**
+ * Admin / settings links shown under the gear (ajustes) menu.
+ * Grouped in the UI; permissions unchanged.
+ */
+export function adminNavLinks(role: Role): {
+  operaciones: NavLink[];
+  administracion: NavLink[];
+  configuracion: NavLink[];
+} {
+  const operaciones: NavLink[] = filterLinks(role, [
+    { href: "/reports", label: "Reportes", permission: "reports:read" },
+    { href: "/caja", label: "Arqueo de caja", permission: "cash:read" },
+    { href: "/payments", label: "Pagos", permission: "payments:read" },
+    { href: "/customers", label: "Clientes", permission: "customers:read" },
+  ]);
+
+  const administracion: NavLink[] = filterLinks(role, [
+    { href: "/insumos", label: "Insumos", permission: "supplies:read" },
+    { href: "/expenses", label: "Gastos", permission: "expenses:read" },
+    { href: "/audit", label: "Auditoría", permission: "audit:read" },
+    { href: "/backup", label: "Respaldo", permission: "backup:export" },
+    { href: "/users", label: "Usuarios", permission: "users:manage" },
+  ]);
+
+  const configuracion: NavLink[] = filterLinks(role, [
+    { href: "/ajustes/impresora", label: "Impresora" },
+    { href: "/company", label: "Empresa", permission: "company:read" },
+    { href: "/profile", label: "Configuración / perfil" },
+  ]);
+
+  return { operaciones, administracion, configuracion };
+}
+
+/** @deprecated Prefer posNavLinks + adminNavLinks; kept for any legacy callers. */
 export function navLinksForRole(role: Role) {
-  const links: { href: string; label: string; permission?: Permission }[] = [
+  const links: NavLink[] = [
     { href: "/dashboard", label: "Panel", permission: "dashboard:read" },
     { href: "/mostrador", label: "Mostrador", permission: "invoices:write" },
     { href: "/invoices", label: "Facturas", permission: "invoices:read" },
@@ -142,7 +201,7 @@ export function navLinksForRole(role: Role) {
     { href: "/users", label: "Usuarios", permission: "users:manage" },
     { href: "/profile", label: "Mi perfil" },
   ];
-  return links.filter((l) => !l.permission || can(role, l.permission));
+  return filterLinks(role, links);
 }
 
 /** Map path prefixes to required permission for page access */
@@ -151,6 +210,7 @@ export function permissionForPath(pathname: string): Permission | null {
   if (pathname.startsWith("/company")) return "company:read";
   if (pathname.startsWith("/expenses")) return "expenses:read";
   if (pathname.startsWith("/products")) return "products:read";
+  if (pathname.startsWith("/stock-rapido")) return "products:read";
   if (pathname.startsWith("/insumos")) return "supplies:read";
   if (pathname.startsWith("/customers")) return "customers:read";
   if (pathname.startsWith("/mostrador")) return "invoices:write";
@@ -160,8 +220,9 @@ export function permissionForPath(pathname: string): Permission | null {
   if (pathname.startsWith("/caja")) return "cash:read";
   if (pathname.startsWith("/audit")) return "audit:read";
   if (pathname.startsWith("/reports")) return "reports:read";
+  if (pathname.startsWith("/top-productos")) return "reports:read";
   if (pathname.startsWith("/backup")) return "backup:export";
   if (pathname.startsWith("/dashboard")) return "dashboard:read";
-  // /profile: any authenticated user
+  // /ajustes/*, /profile: any authenticated user
   return null;
 }

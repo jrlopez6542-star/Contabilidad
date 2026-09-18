@@ -110,13 +110,51 @@ export default async function DashboardPage() {
     <div>
       <PageHeader
         title="Panel"
-        subtitle={`Resumen de ${monthLabel}`}
-        actions={
-          canWriteInvoice ? (
-            <LinkButton href="/mostrador">Vender ahora</LinkButton>
-          ) : undefined
+        subtitle={
+          canWriteInvoice
+            ? "Accesos rápidos de mostrador y resumen del mes"
+            : `Resumen de ${monthLabel}`
         }
       />
+
+      {canWriteInvoice && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-brand-100">
+            Mostrador
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Link
+              href="/mostrador"
+              className="flex min-h-[5.5rem] touch-manipulation flex-col justify-center rounded-2xl border border-brand/15 bg-brand px-5 py-4 text-white shadow-sm transition hover:bg-brand-dark dark:bg-brand-light dark:hover:bg-brand"
+            >
+              <span className="text-lg font-bold tracking-tight">Cobrar</span>
+              <span className="mt-1 text-xs text-white/80">Nueva venta en mostrador</span>
+            </Link>
+            <Link
+              href="/products"
+              className="flex min-h-[5.5rem] touch-manipulation flex-col justify-center rounded-2xl border border-brand/15 bg-surface px-5 py-4 text-brand shadow-sm transition hover:bg-brand-50 dark:border-brand-200/25 dark:bg-brand-900 dark:text-brand-100 dark:hover:bg-brand-800"
+            >
+              <span className="text-lg font-bold tracking-tight">Buscar producto</span>
+              <span className="mt-1 text-xs text-slate-500 dark:text-brand-200">Catálogo completo</span>
+            </Link>
+            <Link
+              href="/stock-rapido"
+              className="flex min-h-[5.5rem] touch-manipulation flex-col justify-center rounded-2xl border border-brand/15 bg-surface px-5 py-4 text-brand shadow-sm transition hover:bg-brand-50 dark:border-brand-200/25 dark:bg-brand-900 dark:text-brand-100 dark:hover:bg-brand-800"
+            >
+              <span className="text-lg font-bold tracking-tight">Stock / precio</span>
+              <span className="mt-1 text-xs text-slate-500 dark:text-brand-200">Consulta rápida</span>
+            </Link>
+            <Link
+              href="/invoices"
+              className="flex min-h-[5.5rem] touch-manipulation flex-col justify-center rounded-2xl border border-brand/15 bg-surface px-5 py-4 text-brand shadow-sm transition hover:bg-brand-50 dark:border-brand-200/25 dark:bg-brand-900 dark:text-brand-100 dark:hover:bg-brand-800"
+            >
+              <span className="text-lg font-bold tracking-tight">Facturas del día</span>
+              <span className="mt-1 text-xs text-slate-500 dark:text-brand-200">Listado y reimpresión</span>
+            </Link>
+          </div>
+        </section>
+      )}
+
 
       {(overdueUnpaid.length > 0 ||
         lowStockProducts.length > 0 ||

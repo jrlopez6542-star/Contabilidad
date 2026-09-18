@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/actions/auth";
-import { ROLE_LABELS, navLinksForRole, type Role } from "@/lib/roles";
+import { ROLE_LABELS, posNavLinks, type Role } from "@/lib/roles";
 import { CompanyLogo } from "@/components/company-logo";
 import { DEFAULT_COMPANY_NAME } from "@/lib/branding";
 
@@ -27,7 +27,7 @@ export function Sidebar({
 }) {
   void _unusedLogoUrl;
   const pathname = usePathname();
-  const links = navLinksForRole(userRole);
+  const links = posNavLinks(userRole);
   const name = companyName || DEFAULT_COMPANY_NAME;
 
   return (
@@ -79,6 +79,9 @@ export function Sidebar({
             </Link>
           );
         })}
+        <p className="px-3 pt-3 text-[10px] font-semibold uppercase tracking-wide text-brand-200/70">
+          Más opciones → engranaje arriba
+        </p>
       </nav>
       <div className="border-t border-white/10 p-4">
         <p className="truncate text-sm font-medium text-white">{userName}</p>

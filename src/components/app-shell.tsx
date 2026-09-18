@@ -6,6 +6,8 @@ import { Sidebar } from "@/components/sidebar";
 import { CompanyLogo } from "@/components/company-logo";
 import { ViewModeToggle } from "@/components/view-mode-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SettingsMenu } from "@/components/settings-menu";
+import { TopProductsButton } from "@/components/top-products-button";
 import type { Role } from "@/lib/roles";
 import { SessionIdleGuard } from "@/components/session-idle-guard";
 
@@ -137,8 +139,10 @@ export function AppShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
+              <TopProductsButton role={userRole} />
               <ThemeToggle />
               <ViewModeToggle compact />
+              <SettingsMenu role={userRole} />
             </div>
           </div>
         </header>
