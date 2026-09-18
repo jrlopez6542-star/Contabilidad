@@ -322,8 +322,9 @@ export function InvoiceForm({
     issueNow: boolean,
     cash?: { amountReceived: number; changeGiven: number }
   ) {
+    if (charging) return;
     setError(null);
-    if (issueNow) setCharging(true);
+    setCharging(true);
     const formData = new FormData();
     formData.set("customerId", customerId);
     formData.set("cedula", cedula.trim());
@@ -349,10 +350,24 @@ export function InvoiceForm({
         }))
       )
     );
-    const res = await createInvoiceAction(formData);
-    // redirect() on success; only reset UI on explicit error
-    if (res?.error) {
-      setError(res.error);
+    try {
+      const res = await createInvoiceAction(formData);
+      // redirect() on success; only reset UI on explicit error
+      if (res?.error) {
+        setError(res.error);
+        setCharging(false);
+      }
+    } catch (err: unknown) {
+      const isRedirect =
+        typeof err === "object" &&
+        err !== null &&
+        ("digest" in err || "message" in err) &&
+        (String((err as { digest?: string }).digest).startsWith("NEXT_REDIRECT") ||
+          (err as { message?: string }).message === "NEXT_REDIRECT");
+      if (isRedirect) {
+        throw err;
+      }
+      setError("Ocurrió un error inesperado al procesar la factura.");
       setCharging(false);
     }
   }
@@ -391,14 +406,27 @@ export function InvoiceForm({
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (!(e.ctrlKey || e.metaKey) || e.key !== "Enter") return;
-      if (lookingUpRef.current) return;
-      e.preventDefault();
-      issueRef.current();
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        if (lookingUpRef.current) return;
+        e.preventDefault();
+        issueRef.current();
+        return;
+      }
+      if (e.key === "F2") {
+        e.preventDefault();
+        scanRef.current?.focus();
+        scanRef.current?.select();
+        return;
+      }
+      if (e.key === "Escape" && cashOpen && !charging) {
+        e.preventDefault();
+        setCashOpen(false);
+        return;
+      }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [cashOpen, charging]);
 
   useEffect(() => {
     if (!cashOpen) return;
@@ -747,7 +775,7 @@ export function InvoiceForm({
               onClick={() => requestIssueAndCharge()}
               disabled={lookingUp || charging}
             >
-              Emitir y cobrar
+              {charging ? "Procesando…" : "Emitir y cobrar"}
             </Button>
             <Button
               type="button"
@@ -756,7 +784,7 @@ export function InvoiceForm({
               onClick={() => void submit(false)}
               disabled={lookingUp || charging}
             >
-              Guardar borrador
+              {charging ? "Guardando…" : "Guardar borrador"}
             </Button>
           </div>
         </div>
