@@ -752,11 +752,11 @@ export function InvoiceForm({
         className="fixed inset-x-0 bottom-0 z-40 border-t border-brand/10 bg-surface/95 px-3 pt-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur dark:border-brand-200/15 dark:bg-brand-950/95"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="mx-auto flex max-w-5xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-center text-base font-semibold text-brand dark:text-brand-100 sm:text-left">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2">
+          <p className="w-full text-center text-lg font-bold text-brand dark:text-brand-100">
             Total: {formatCOP(totals.total)}
           </p>
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
             <Button
               type="button"
               className="w-full sm:w-auto"

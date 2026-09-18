@@ -556,18 +556,33 @@ export async function buildThermalTicketPdf(opts: {
       y += bold ? 14 : 12;
     };
 
-    row("Subtotal", formatMoneyThermal(opts.subtotal));
-    row("IVA", formatMoneyThermal(opts.ivaTotal));
-    row("TOTAL", formatMoneyThermal(opts.total), true);
-
     if (opts.notes) {
-      y += 4;
+      y += 2;
       doc.font("Helvetica").fontSize(6).fillColor(ink);
       doc.text(`Notas: ${truncateText(opts.notes, 120)}`, margin, y, {
         width: contentWidth,
       });
-      y = doc.y + 4;
+      y = doc.y + 6;
+      doc
+        .moveTo(margin, y)
+        .lineTo(pageWidth - margin, y)
+        .strokeColor(ink)
+        .lineWidth(0.5)
+        .stroke();
+      y += 6;
     }
+
+    row("Subtotal", formatMoneyThermal(opts.subtotal));
+    row("IVA", formatMoneyThermal(opts.ivaTotal));
+    y += 2;
+    doc
+      .moveTo(margin, y)
+      .lineTo(pageWidth - margin, y)
+      .strokeColor(ink)
+      .lineWidth(0.8)
+      .stroke();
+    y += 6;
+    row("TOTAL", formatMoneyThermal(opts.total), true);
 
     y += 6;
     doc
