@@ -355,13 +355,12 @@ export async function buildThermalTicketPdf(opts: {
 }): Promise<Buffer> {
   const widthMm =
     opts.widthMm === 80 || Number(opts.widthMm) === 80 ? 80 : 58;
-  // Use slightly under physical roll width so drivers/browsers don't clip
-  // the right edge when scaling (common on 58mm Windows printers).
-  const designMm = widthMm === 80 ? 72 : 52;
+  // Full roll width with tight margins; content centered on the paper.
+  const designMm = widthMm === 80 ? 80 : 58;
   const pageWidth = Math.round(mmToPt(designMm));
-  const margin = 8;
+  const margin = widthMm === 58 ? 4 : 6;
   const contentWidth = pageWidth - margin * 2;
-  const maxDescChars = widthMm === 58 ? 24 : 34;
+  const maxDescChars = widthMm === 58 ? 28 : 40;
 
   // Estimate height from content (grow with line items)
   const estimated =
@@ -453,7 +452,7 @@ export async function buildThermalTicketPdf(opts: {
     doc.font("Helvetica").fontSize(7);
     doc.text(`${opts.dateLabel}: ${formatDateTime(opts.dateValue)}`, margin, y, {
       width: contentWidth,
-      align: "left",
+      align: "center",
     });
     y = doc.y + 1;
 
@@ -461,14 +460,14 @@ export async function buildThermalTicketPdf(opts: {
     if (payLabel) {
       doc.text(`Pago: ${payLabel}`, margin, y, {
         width: contentWidth,
-        align: "left",
+        align: "center",
       });
       y = doc.y + 1;
     }
     if (opts.extraLine) {
       doc.text(opts.extraLine, margin, y, {
         width: contentWidth,
-        align: "left",
+        align: "center",
       });
       y = doc.y + 1;
     }
@@ -483,15 +482,19 @@ export async function buildThermalTicketPdf(opts: {
     y += 5;
 
     doc.font("Helvetica-Bold").fontSize(7);
-    doc.text("Cliente", margin, y, { width: contentWidth });
+    doc.text("Cliente", margin, y, { width: contentWidth, align: "center" });
     y = doc.y + 1;
     doc.font("Helvetica").fontSize(8);
     doc.text(truncateText(opts.party.name, maxDescChars), margin, y, {
       width: contentWidth,
+      align: "center",
     });
     y = doc.y + 1;
     doc.fontSize(7);
-    doc.text(`CC/NIT: ${opts.party.nit}`, margin, y, { width: contentWidth });
+    doc.text(`CC/NIT: ${opts.party.nit}`, margin, y, {
+      width: contentWidth,
+      align: "center",
+    });
     y = doc.y + 4;
 
     doc
@@ -510,20 +513,20 @@ export async function buildThermalTicketPdf(opts: {
       }
       const desc = truncateText(item.description, maxDescChars);
       doc.font("Helvetica").fontSize(8).fillColor(ink);
-      doc.text(desc, margin, y, { width: contentWidth });
+      doc.text(desc, margin, y, { width: contentWidth, align: "center" });
       y = doc.y + 1;
       doc.font("Courier").fontSize(7);
       doc.text(
         `${item.quantity} x ${formatMoneyThermal(item.unitPrice)}`,
         margin,
         y,
-        { width: contentWidth, align: "left", lineBreak: false }
+        { width: contentWidth, align: "center", lineBreak: false }
       );
       y += 9;
       doc.font("Courier-Bold").fontSize(8);
       doc.text(formatMoneyThermal(item.lineTotal), margin, y, {
         width: contentWidth,
-        align: "right",
+        align: "center",
         lineBreak: false,
       });
       y += 12;
@@ -543,14 +546,14 @@ export async function buildThermalTicketPdf(opts: {
       doc.font("Helvetica").fontSize(bold ? 8 : 7);
       doc.text(label, margin, y, {
         width: contentWidth,
-        align: "left",
+        align: "center",
         lineBreak: false,
       });
       y += bold ? 10 : 9;
       doc.font(bold ? "Courier-Bold" : "Courier").fontSize(bold ? 10 : 8);
       doc.text(value, margin, y, {
         width: contentWidth,
-        align: "right",
+        align: "center",
         lineBreak: false,
       });
       y += bold ? 14 : 12;
@@ -561,6 +564,7 @@ export async function buildThermalTicketPdf(opts: {
       doc.font("Helvetica").fontSize(6).fillColor(ink);
       doc.text(`Notas: ${truncateText(opts.notes, 120)}`, margin, y, {
         width: contentWidth,
+        align: "center",
       });
       y = doc.y + 6;
       doc
