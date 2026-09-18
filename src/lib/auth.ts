@@ -125,17 +125,11 @@ export async function requirePermission(
   return session;
 }
 
+/** Alias de requirePermission para server actions (mismo comportamiento). */
 export async function assertPermission(
   permission: Permission
 ): Promise<SessionUser> {
-  const session = await getSession();
-  if (!session) {
-    redirect("/login");
-  }
-  if (!can(session.role, permission)) {
-    redirect("/dashboard");
-  }
-  return session;
+  return requirePermission(permission);
 }
 
 export async function login(email: string, password: string, ip = "") {

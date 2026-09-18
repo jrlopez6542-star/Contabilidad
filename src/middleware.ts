@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import {
+  ROLE_PERMISSIONS,
+  isRole,
+  permissionForPath,
+} from "@/lib/roles";
 
 const COOKIE_NAME = "contabilidad_session";
 
@@ -20,109 +25,6 @@ function getSecret() {
     }
   }
   return new TextEncoder().encode(secret || "dev-secret");
-}
-
-/** Role permissions mirrored for Edge (no Prisma). Keep in sync with lib/roles.ts */
-const ROLE_PERMS: Record<string, string[]> = {
-  superadmin: [
-    "users:manage",
-    "company:read",
-    "company:write",
-    "products:read",
-    "products:write",
-    "customers:read",
-    "customers:write",
-    "invoices:read",
-    "invoices:write",
-    "quotes:read",
-    "quotes:write",
-    "payments:read",
-    "payments:write",
-    "expenses:read",
-    "expenses:write",
-    "reports:read",
-    "backup:export",
-    "dashboard:read",
-    "cash:read",
-    "cash:write",
-    "audit:read",
-    "supplies:read",
-    "supplies:write",
-  ],
-  admin: [
-    "company:read",
-    "company:write",
-    "products:read",
-    "products:write",
-    "customers:read",
-    "customers:write",
-    "invoices:read",
-    "invoices:write",
-    "quotes:read",
-    "quotes:write",
-    "payments:read",
-    "payments:write",
-    "expenses:read",
-    "expenses:write",
-    "reports:read",
-    "backup:export",
-    "dashboard:read",
-    "cash:read",
-    "cash:write",
-    "audit:read",
-    "supplies:read",
-    "supplies:write",
-  ],
-  vendedor: [
-    "products:read",
-    "customers:read",
-    "customers:write",
-    "invoices:read",
-    "invoices:write",
-    "quotes:read",
-    "quotes:write",
-    "payments:read",
-    "payments:write",
-    "dashboard:read",
-    "cash:read",
-  ],
-  contador: [
-    "company:read",
-    "products:read",
-    "customers:read",
-    "invoices:read",
-    "quotes:read",
-    "payments:read",
-    "payments:write",
-    "expenses:read",
-    "expenses:write",
-    "reports:read",
-    "dashboard:read",
-    "cash:read",
-    "cash:write",
-    "audit:read",
-    "supplies:read",
-    "supplies:write",
-  ],
-};
-
-function permissionForPath(pathname: string): string | null {
-  if (pathname.startsWith("/users")) return "users:manage";
-  if (pathname.startsWith("/company")) return "company:read";
-  if (pathname.startsWith("/expenses")) return "expenses:read";
-  if (pathname.startsWith("/products")) return "products:read";
-  if (pathname.startsWith("/insumos")) return "supplies:read";
-  if (pathname.startsWith("/customers")) return "customers:read";
-  if (pathname.startsWith("/mostrador")) return "invoices:write";
-  if (pathname.startsWith("/invoices/new")) return "invoices:write";
-  if (pathname.startsWith("/invoices")) return "invoices:read";
-  if (pathname.startsWith("/payments")) return "payments:read";
-  if (pathname.startsWith("/caja")) return "cash:read";
-  if (pathname.startsWith("/audit")) return "audit:read";
-  if (pathname.startsWith("/reports")) return "reports:read";
-  if (pathname.startsWith("/backup")) return "backup:export";
-  if (pathname.startsWith("/dashboard")) return "dashboard:read";
-  return null;
 }
 
 function isStaticPublicAsset(pathname: string): boolean {
@@ -185,10 +87,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (authenticated && role) {
+  if (authenticated && role && isRole(role)) {
     const needed = permissionForPath(pathname);
     if (needed) {
-      const perms = ROLE_PERMS[role] || [];
+      const perms = ROLE_PERMISSIONS[role];
       if (!perms.includes(needed)) {
         const url = request.nextUrl.clone();
         url.pathname = "/dashboard";

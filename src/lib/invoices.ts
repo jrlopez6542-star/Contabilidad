@@ -9,13 +9,13 @@ export type LineInput = {
   ivaRate: number;
 };
 
-export type ComputedLine = LineInput & {
+type ComputedLine = LineInput & {
   lineSubtotal: number;
   lineIva: number;
   lineTotal: number;
 };
 
-export function calcLine(item: LineInput) {
+function calcLine(item: LineInput) {
   const lineSubtotal = Math.round(item.quantity * item.unitPrice);
   const lineIva = Math.round(lineSubtotal * (item.ivaRate / 100));
   const lineTotal = lineSubtotal + lineIva;
@@ -57,27 +57,6 @@ export async function allocateInvoiceNumber() {
   });
 }
 
-export async function allocateQuoteNumber() {
-  return prisma.$transaction(async (tx) => {
-    let company = await tx.company.findFirst();
-    if (!company) {
-      company = await tx.company.create({
-        data: {
-          name: "Buñuelandia",
-          nit: "900000000-0",
-          logoUrl: "/logo-bunuelandia.png",
-        },
-      });
-    }
-    const number = `${company.quotePrefix}-${String(company.nextQuoteNumber).padStart(4, "0")}`;
-    await tx.company.update({
-      where: { id: company.id },
-      data: { nextQuoteNumber: company.nextQuoteNumber + 1 },
-    });
-    return number;
-  });
-}
-
 function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -112,39 +91,6 @@ export async function syncNextInvoiceNumber(
   await tx.company.update({
     where: { id: company.id },
     data: { nextInvoiceNumber: next },
-  });
-  return next;
-}
-
-/**
- * Recalculate Company.nextQuoteNumber from remaining quotes that match
- * the CURRENT company.quotePrefix (PREFIX-####). Does not renumber quotes.
- */
-export async function syncNextQuoteNumber(
-  tx: Prisma.TransactionClient
-): Promise<number> {
-  const company = await tx.company.findFirst();
-  if (!company) return 1;
-
-  const prefix = company.quotePrefix;
-  const quotes = await tx.quote.findMany({
-    where: { number: { startsWith: `${prefix}-` } },
-    select: { number: true },
-  });
-
-  const re = new RegExp(`^${escapeRegExp(prefix)}-(\d+)$`);
-  let max = 0;
-  for (const q of quotes) {
-    const m = q.number.match(re);
-    if (!m) continue;
-    const n = parseInt(m[1], 10);
-    if (Number.isFinite(n) && n > max) max = n;
-  }
-
-  const next = max > 0 ? max + 1 : 1;
-  await tx.company.update({
-    where: { id: company.id },
-    data: { nextQuoteNumber: next },
   });
   return next;
 }

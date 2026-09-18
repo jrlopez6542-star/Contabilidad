@@ -23,6 +23,10 @@ export function bogotaDayRange(dateStr: string): { start: Date; end: Date } {
   return { start, end };
 }
 
+/**
+ * Fecha+hora Bogotá sin am/pm (listados auditoría/caja).
+ * Distinto de formatDateTime en format.ts (usa hour12).
+ */
 export function formatDateTimeBogota(
   date: Date | string | null | undefined
 ): string {

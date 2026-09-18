@@ -4,7 +4,7 @@ import { crossedLowStockThreshold } from "./stock-alerts";
 
 type Tx = Prisma.TransactionClient;
 
-/** Optional metadata for Kardex (StockMovement) rows. */
+/** Optional metadata for StockMovement ledger rows. */
 export type StockMovementMeta = {
   reason?: string;
   refType?: "invoice" | "adjust" | "manual" | string;
@@ -16,7 +16,7 @@ export type StockMovementMeta = {
 
 /** Decrease stock for invoice lines with tracked products. Throws if insufficient.
  *  Returns products that crossed minStock (was above → now <=) for email alerts.
- *  Writes StockMovement type=out when stock changes.
+ * Writes StockMovement type=out when stock changes.
  */
 export async function decreaseStockForItems(
   tx: Tx,

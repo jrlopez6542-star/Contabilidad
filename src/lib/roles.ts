@@ -8,9 +8,6 @@ export const ROLE_LABELS: Record<Role, string> = {
   contador: "Contador",
 };
 
-/** Roles an admin (non-superadmin) may assign in user forms */
-export const OPERATIONAL_ROLES = ["admin", "vendedor", "contador"] as const;
-
 export type Permission =
   | "users:manage"
   | "company:read"
@@ -21,8 +18,6 @@ export type Permission =
   | "customers:write"
   | "invoices:read"
   | "invoices:write"
-  | "quotes:read"
-  | "quotes:write"
   | "payments:read"
   | "payments:write"
   | "expenses:read"
@@ -46,8 +41,6 @@ const ALL_PERMISSIONS: Permission[] = [
   "customers:write",
   "invoices:read",
   "invoices:write",
-  "quotes:read",
-  "quotes:write",
   "payments:read",
   "payments:write",
   "expenses:read",
@@ -76,8 +69,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "customers:write",
     "invoices:read",
     "invoices:write",
-    "quotes:read",
-    "quotes:write",
     "payments:read",
     "payments:write",
     "dashboard:read",
@@ -88,7 +79,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "products:read",
     "customers:read",
     "invoices:read",
-    "quotes:read",
     "payments:read",
     "payments:write",
     "expenses:read",
@@ -180,28 +170,6 @@ export function adminNavLinks(role: Role): {
   ]);
 
   return { operaciones, administracion, configuracion };
-}
-
-/** @deprecated Prefer posNavLinks + adminNavLinks; kept for any legacy callers. */
-export function navLinksForRole(role: Role) {
-  const links: NavLink[] = [
-    { href: "/dashboard", label: "Panel", permission: "dashboard:read" },
-    { href: "/mostrador", label: "Mostrador", permission: "invoices:write" },
-    { href: "/invoices", label: "Facturas", permission: "invoices:read" },
-    { href: "/payments", label: "Pagos", permission: "payments:read" },
-    { href: "/caja", label: "Caja del día", permission: "cash:read" },
-    { href: "/customers", label: "Clientes", permission: "customers:read" },
-    { href: "/products", label: "Productos", permission: "products:read" },
-    { href: "/insumos", label: "Insumos", permission: "supplies:read" },
-    { href: "/expenses", label: "Gastos", permission: "expenses:read" },
-    { href: "/reports", label: "Reportes", permission: "reports:read" },
-    { href: "/audit", label: "Auditoría", permission: "audit:read" },
-    { href: "/backup", label: "Respaldo", permission: "backup:export" },
-    { href: "/company", label: "Empresa", permission: "company:read" },
-    { href: "/users", label: "Usuarios", permission: "users:manage" },
-    { href: "/profile", label: "Mi perfil" },
-  ];
-  return filterLinks(role, links);
 }
 
 /** Map path prefixes to required permission for page access */

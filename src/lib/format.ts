@@ -51,22 +51,6 @@ export const INVOICE_STATUS_COLORS: Record<string, string> = {
   void: "bg-jam-100 text-jam",
 };
 
-export const QUOTE_STATUS_LABELS: Record<string, string> = {
-  draft: "Borrador",
-  sent: "Enviada",
-  accepted: "Aceptada",
-  rejected: "Rechazada",
-  converted: "Convertida",
-};
-
-export const QUOTE_STATUS_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700",
-  sent: "bg-gold-100 text-amber-900",
-  accepted: "bg-brand-100 text-brand",
-  rejected: "bg-jam-100 text-jam",
-  converted: "bg-brand-50 text-brand-dark",
-};
-
 export const PAYMENT_METHODS = [
   { value: "transferencia", label: "Transferencia" },
   { value: "efectivo", label: "Efectivo" },
