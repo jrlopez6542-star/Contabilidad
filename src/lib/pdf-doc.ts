@@ -355,24 +355,27 @@ export async function buildThermalTicketPdf(opts: {
 }): Promise<Buffer> {
   const widthMm =
     opts.widthMm === 80 || Number(opts.widthMm) === 80 ? 80 : 58;
-  const pageWidth = Math.round(mmToPt(widthMm)); // ~164 or ~227
-  // Extra margin: many 58mm printers have a dead zone on the right.
-  const margin = widthMm === 58 ? 12 : 12;
+  // Use slightly under physical roll width so drivers/browsers don't clip
+  // the right edge when scaling (common on 58mm Windows printers).
+  const designMm = widthMm === 80 ? 72 : 52;
+  const pageWidth = Math.round(mmToPt(designMm));
+  const margin = 8;
   const contentWidth = pageWidth - margin * 2;
-  const maxDescChars = widthMm === 58 ? 26 : 36;
+  const maxDescChars = widthMm === 58 ? 24 : 34;
 
   // Estimate height from content (grow with line items)
   const estimated =
-    120 +
-    opts.items.length * 36 +
+    140 +
+    opts.items.length * 48 +
     (opts.notes ? 40 : 0) +
     (opts.extraLine ? 16 : 0) +
     80;
   const pageHeight = Math.max(600, Math.min(estimated, 2000));
 
   const chunks: Buffer[] = [];
+  // margin:0 — we place text ourselves; PDFKit page margins can clip absolute draws
   const doc = new PDFDocument({
-    margin,
+    margin: 0,
     size: [pageWidth, pageHeight],
     autoFirstPage: true,
   });
@@ -509,22 +512,21 @@ export async function buildThermalTicketPdf(opts: {
       doc.font("Helvetica").fontSize(8).fillColor(ink);
       doc.text(desc, margin, y, { width: contentWidth });
       y = doc.y + 1;
-      doc.fontSize(7);
-      const qtyLine = `${item.quantity} x ${formatMoneyThermal(item.unitPrice)}`;
-      const lineTotal = formatMoneyThermal(item.lineTotal);
-      const leftW = Math.floor(contentWidth * 0.52);
-      const rightW = contentWidth - leftW;
-      doc.text(qtyLine, margin, y, {
-        width: leftW,
-        align: "left",
-        lineBreak: false,
-      });
-      doc.text(lineTotal, margin + leftW, y, {
-        width: rightW,
+      doc.font("Courier").fontSize(7);
+      doc.text(
+        `${item.quantity} x ${formatMoneyThermal(item.unitPrice)}`,
+        margin,
+        y,
+        { width: contentWidth, align: "left", lineBreak: false }
+      );
+      y += 9;
+      doc.font("Courier-Bold").fontSize(8);
+      doc.text(formatMoneyThermal(item.lineTotal), margin, y, {
+        width: contentWidth,
         align: "right",
         lineBreak: false,
       });
-      y += 11;
+      y += 12;
     }
 
     y += 2;
@@ -536,23 +538,22 @@ export async function buildThermalTicketPdf(opts: {
       .stroke();
     y += 6;
 
-    doc.font("Helvetica").fontSize(8).fillColor(ink);
+    doc.fillColor(ink);
     const row = (label: string, value: string, bold = false) => {
-      if (bold) doc.font("Helvetica-Bold").fontSize(9);
-      else doc.font("Helvetica").fontSize(8);
-      const labelW = Math.floor(contentWidth * 0.4);
-      const valueW = contentWidth - labelW;
+      doc.font("Helvetica").fontSize(bold ? 8 : 7);
       doc.text(label, margin, y, {
-        width: labelW,
+        width: contentWidth,
         align: "left",
         lineBreak: false,
       });
-      doc.text(value, margin + labelW, y, {
-        width: valueW,
+      y += bold ? 10 : 9;
+      doc.font(bold ? "Courier-Bold" : "Courier").fontSize(bold ? 10 : 8);
+      doc.text(value, margin, y, {
+        width: contentWidth,
         align: "right",
         lineBreak: false,
       });
-      y += bold ? 13 : 11;
+      y += bold ? 14 : 12;
     };
 
     row("Subtotal", formatMoneyThermal(opts.subtotal));
