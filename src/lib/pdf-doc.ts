@@ -391,24 +391,37 @@ export async function buildThermalTicketPdf(opts: {
     const ink = "#000000";
     let y = margin;
 
-    // Tiny logo centered (optional)
-    if (logoBuf) {
+    // Larger B&W buñuelo mark for thermal (falls back to company logo)
+    let headerLogo = logoBuf;
+    try {
+      const thermalLogoPath = path.join(
+        process.cwd(),
+        "public",
+        "ticket-logo-bunuelo.png"
+      );
+      if (existsSync(thermalLogoPath)) {
+        headerLogo = readFileSync(thermalLogoPath);
+      }
+    } catch {
+      /* keep logoBuf */
+    }
+    if (headerLogo) {
       try {
-        const logoSize = widthMm === 58 ? 24 : 30;
+        const logoSize = widthMm === 58 ? 52 : 64;
         const logoX = (pageWidth - logoSize) / 2;
-        doc.image(logoBuf, logoX, y, { fit: [logoSize, logoSize] });
-        y += logoSize + 4;
+        doc.image(headerLogo, logoX, y, { fit: [logoSize, logoSize] });
+        y += logoSize + 3;
       } catch {
         /* ignore bad image */
       }
     }
 
-    doc.fillColor(ink).font("Helvetica-Bold").fontSize(11);
+    doc.fillColor(ink).font("Helvetica-Bold").fontSize(13);
     doc.text(companyName, margin, y, {
       width: contentWidth,
       align: "center",
     });
-    y = doc.y + 2;
+    y = doc.y + 3;
 
     // Titles bold; body regular (slightly larger than 7pt so thermal stays readable)
     doc.font("Helvetica").fontSize(8);
