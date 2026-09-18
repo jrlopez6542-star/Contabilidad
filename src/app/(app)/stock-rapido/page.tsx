@@ -21,8 +21,8 @@ export default async function StockRapidoPage() {
   return (
     <div>
       <PageHeader
-        title="Stock / precio rápido"
-        subtitle="Consulta rápida de SKU, precio y existencias. Solo lectura."
+        title="Buscar producto"
+        subtitle="Busca por nombre o SKU; verás precio y stock. El alta de productos está en el Panel (desplegable)."
       />
       <StockRapidoSearch products={products} />
     </div>

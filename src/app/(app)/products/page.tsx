@@ -1,8 +1,8 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, getSession } from "@/lib/auth";
 import { can } from "@/lib/roles";
-import { Card, EmptyState, PageHeader, Table } from "@/components/ui";
-import { ProductForm } from "./form";
+import { EmptyState, PageHeader, Table } from "@/components/ui";
 import { ProductEditRow } from "./edit-row";
 
 export default async function ProductsPage() {
@@ -21,16 +21,17 @@ export default async function ProductsPage() {
             : "Catálogo (solo lectura)"
         }
       />
-      <div className="grid gap-4 lg:grid-cols-3">
-        {canWrite && (
-          <Card className="h-fit !p-4 lg:col-span-1">
-            <h2 className="mb-3 text-sm font-semibold text-slate-800 dark:text-brand-100">
-              Nuevo producto
-            </h2>
-            <ProductForm />
-          </Card>
-        )}
-        <div className={canWrite ? "lg:col-span-2" : "lg:col-span-3"}>
+      {canWrite && (
+        <div className="mb-4">
+          <Link
+            href="/products/nuevo"
+            className="inline-flex min-h-11 touch-manipulation items-center rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark dark:bg-brand-light"
+          >
+            Nuevo producto
+          </Link>
+        </div>
+      )}
+      <div>
           {products.length === 0 ? (
             <EmptyState message="Aún no hay productos ni servicios en el catálogo." />
           ) : (

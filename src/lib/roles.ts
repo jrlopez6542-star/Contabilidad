@@ -134,16 +134,14 @@ function filterLinks(role: Role, links: NavLink[]): NavLink[] {
 }
 
 /**
- * Menú lateral POS: Panel, Cobrar, Buscar producto, Stock/precio, Facturas, perfil.
- * El panel principal del dashboard muestra solo Cobrar.
- * Admin heavy links live in the gear menu.
+ * Menú lateral POS: Panel, Cobrar, Buscar producto (precio+stock), Facturas, perfil.
+ * Nuevo producto vive como panel desplegable en el dashboard (mostrador).
  */
 export function posNavLinks(role: Role): NavLink[] {
   const links: NavLink[] = [
     { href: "/dashboard", label: "Panel", permission: "dashboard:read" },
     { href: "/mostrador", label: "Cobrar", permission: "invoices:write" },
-    { href: "/products", label: "Buscar producto", permission: "products:read" },
-    { href: "/stock-rapido", label: "Stock / precio", permission: "products:read" },
+    { href: "/stock-rapido", label: "Buscar producto", permission: "products:read" },
     { href: "/invoices", label: "Facturas", permission: "invoices:read" },
     { href: "/profile", label: "Mi perfil" },
   ];
@@ -167,6 +165,7 @@ export function adminNavLinks(role: Role): {
   ]);
 
   const administracion: NavLink[] = filterLinks(role, [
+    { href: "/products", label: "Catálogo productos", permission: "products:read" },
     { href: "/insumos", label: "Insumos", permission: "supplies:read" },
     { href: "/expenses", label: "Gastos", permission: "expenses:read" },
     { href: "/audit", label: "Auditoría", permission: "audit:read" },
@@ -210,6 +209,7 @@ export function permissionForPath(pathname: string): Permission | null {
   if (pathname.startsWith("/users")) return "users:manage";
   if (pathname.startsWith("/company")) return "company:read";
   if (pathname.startsWith("/expenses")) return "expenses:read";
+  if (pathname.startsWith("/products/nuevo")) return "products:write";
   if (pathname.startsWith("/products")) return "products:read";
   if (pathname.startsWith("/stock-rapido")) return "products:read";
   if (pathname.startsWith("/insumos")) return "supplies:read";
