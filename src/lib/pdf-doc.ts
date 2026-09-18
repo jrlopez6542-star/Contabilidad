@@ -403,14 +403,15 @@ export async function buildThermalTicketPdf(opts: {
       }
     }
 
-    doc.fillColor(ink).font("Helvetica-Bold").fontSize(10);
+    doc.fillColor(ink).font("Helvetica-Bold").fontSize(11);
     doc.text(companyName, margin, y, {
       width: contentWidth,
       align: "center",
     });
     y = doc.y + 2;
 
-    doc.font("Helvetica").fontSize(7);
+    // All body text bold + slightly larger: thin Helvetica blurs on 58mm thermal
+    doc.font("Helvetica-Bold").fontSize(8);
     if (companyNit) {
       doc.text(`NIT: ${companyNit}`, margin, y, {
         width: contentWidth,
@@ -438,60 +439,56 @@ export async function buildThermalTicketPdf(opts: {
       .moveTo(margin, y)
       .lineTo(pageWidth - margin, y)
       .strokeColor(ink)
-      .lineWidth(0.8)
+      .lineWidth(1)
       .stroke();
     y += 6;
 
     doc.font("Helvetica-Bold").fontSize(9);
     doc.text(opts.title, margin, y, { width: contentWidth, align: "center" });
     y = doc.y + 1;
-    doc.font("Helvetica-Bold").fontSize(10);
+    doc.font("Helvetica-Bold").fontSize(11);
     doc.text(opts.number, margin, y, { width: contentWidth, align: "center" });
     y = doc.y + 4;
 
-    doc.font("Helvetica").fontSize(7);
-    doc.text(`${opts.dateLabel}: ${formatDateTime(opts.dateValue)}`, margin, y, {
+    doc.font("Helvetica-Bold").fontSize(8);
+    doc.text(formatDateTime(opts.dateValue), margin, y, {
       width: contentWidth,
       align: "center",
     });
-    y = doc.y + 1;
+    y = doc.y + 2;
 
     const payLabel = paymentMethodLabel(opts.paymentMethod);
     if (payLabel) {
-      doc.text(`Pago: ${payLabel}`, margin, y, {
+      doc.text(payLabel, margin, y, {
         width: contentWidth,
         align: "center",
       });
-      y = doc.y + 1;
+      y = doc.y + 2;
     }
     if (opts.extraLine) {
       doc.text(opts.extraLine, margin, y, {
         width: contentWidth,
         align: "center",
       });
-      y = doc.y + 1;
+      y = doc.y + 2;
     }
 
-    y += 4;
+    y += 3;
     doc
       .moveTo(margin, y)
       .lineTo(pageWidth - margin, y)
       .strokeColor(ink)
-      .lineWidth(0.5)
+      .lineWidth(0.8)
       .stroke();
     y += 5;
 
-    doc.font("Helvetica-Bold").fontSize(7);
-    doc.text("Cliente", margin, y, { width: contentWidth, align: "center" });
-    y = doc.y + 1;
-    doc.font("Helvetica").fontSize(8);
+    doc.font("Helvetica-Bold").fontSize(8);
     doc.text(truncateText(opts.party.name, maxDescChars), margin, y, {
       width: contentWidth,
       align: "center",
     });
     y = doc.y + 1;
-    doc.fontSize(7);
-    doc.text(`CC/NIT: ${opts.party.nit}`, margin, y, {
+    doc.text(opts.party.nit, margin, y, {
       width: contentWidth,
       align: "center",
     });
@@ -501,29 +498,29 @@ export async function buildThermalTicketPdf(opts: {
       .moveTo(margin, y)
       .lineTo(pageWidth - margin, y)
       .strokeColor(ink)
-      .lineWidth(0.5)
+      .lineWidth(0.8)
       .stroke();
     y += 5;
 
-    // Line items — stacked for narrow width
+    // Line items — stacked + centered (no side columns that look “shifted”)
     for (const item of opts.items) {
       if (y > pageHeight - 80) {
-        doc.addPage({ size: [pageWidth, pageHeight], margin });
+        doc.addPage({ size: [pageWidth, pageHeight], margin: 0 });
         y = margin;
       }
       const desc = truncateText(item.description, maxDescChars);
-      doc.font("Helvetica").fontSize(8).fillColor(ink);
+      doc.font("Helvetica-Bold").fontSize(9).fillColor(ink);
       doc.text(desc, margin, y, { width: contentWidth, align: "center" });
-      y = doc.y + 1;
-      doc.font("Courier").fontSize(7);
+      y = doc.y + 2;
+      doc.font("Helvetica-Bold").fontSize(8);
       doc.text(
         `${item.quantity} x ${formatMoneyThermal(item.unitPrice)}`,
         margin,
         y,
         { width: contentWidth, align: "center", lineBreak: false }
       );
-      y += 9;
-      doc.font("Courier-Bold").fontSize(8);
+      y += 10;
+      doc.font("Helvetica-Bold").fontSize(9);
       doc.text(formatMoneyThermal(item.lineTotal), margin, y, {
         width: contentWidth,
         align: "center",
@@ -537,20 +534,20 @@ export async function buildThermalTicketPdf(opts: {
       .moveTo(margin, y)
       .lineTo(pageWidth - margin, y)
       .strokeColor(ink)
-      .lineWidth(0.8)
+      .lineWidth(1)
       .stroke();
     y += 6;
 
     doc.fillColor(ink);
     const row = (label: string, value: string, bold = false) => {
-      doc.font("Helvetica").fontSize(bold ? 8 : 7);
+      doc.font("Helvetica-Bold").fontSize(bold ? 9 : 8);
       doc.text(label, margin, y, {
         width: contentWidth,
         align: "center",
         lineBreak: false,
       });
-      y += bold ? 10 : 9;
-      doc.font(bold ? "Courier-Bold" : "Courier").fontSize(bold ? 10 : 8);
+      y += bold ? 11 : 10;
+      doc.font("Helvetica-Bold").fontSize(bold ? 11 : 9);
       doc.text(value, margin, y, {
         width: contentWidth,
         align: "center",
@@ -561,7 +558,7 @@ export async function buildThermalTicketPdf(opts: {
 
     if (opts.notes) {
       y += 2;
-      doc.font("Helvetica").fontSize(6).fillColor(ink);
+      doc.font("Helvetica-Bold").fontSize(7).fillColor(ink);
       doc.text(`Notas: ${truncateText(opts.notes, 120)}`, margin, y, {
         width: contentWidth,
         align: "center",
@@ -571,7 +568,7 @@ export async function buildThermalTicketPdf(opts: {
         .moveTo(margin, y)
         .lineTo(pageWidth - margin, y)
         .strokeColor(ink)
-        .lineWidth(0.5)
+        .lineWidth(0.8)
         .stroke();
       y += 6;
     }
@@ -583,7 +580,7 @@ export async function buildThermalTicketPdf(opts: {
       .moveTo(margin, y)
       .lineTo(pageWidth - margin, y)
       .strokeColor(ink)
-      .lineWidth(0.8)
+      .lineWidth(1)
       .stroke();
     y += 6;
     row("TOTAL", formatMoneyThermal(opts.total), true);
@@ -593,10 +590,10 @@ export async function buildThermalTicketPdf(opts: {
       .moveTo(margin, y)
       .lineTo(pageWidth - margin, y)
       .strokeColor(ink)
-      .lineWidth(0.5)
+      .lineWidth(0.8)
       .stroke();
     y += 8;
-    doc.font("Helvetica").fontSize(7);
+    doc.font("Helvetica-Bold").fontSize(8);
     doc.text("¡Gracias por su compra!", margin, y, {
       width: contentWidth,
       align: "center",
