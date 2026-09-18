@@ -404,29 +404,59 @@ export function InvoiceForm({
     requestIssueAndCharge();
   };
 
+  const cashOpenRef = useRef(cashOpen);
+  const chargingRef = useRef(charging);
+  const closeCashRef = useRef(closeCashTender);
+  cashOpenRef.current = cashOpen;
+  chargingRef.current = charging;
+  closeCashRef.current = closeCashTender;
+
   useEffect(() => {
+    function focusScanField() {
+      const el = scanRef.current;
+      if (!el) return;
+      el.focus();
+      el.select();
+    }
+
     function onKeyDown(e: KeyboardEvent) {
+      if (e.isComposing) return;
+
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         if (lookingUpRef.current) return;
         e.preventDefault();
         issueRef.current();
         return;
       }
-      if (e.key === "F2") {
+
+      const isF2 = e.code === "F2" || e.key === "F2";
+      const isAltS =
+        e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        (e.key === "s" || e.key === "S" || e.code === "KeyS");
+      if (isF2 || isAltS) {
         e.preventDefault();
-        scanRef.current?.focus();
-        scanRef.current?.select();
+        e.stopPropagation();
+        focusScanField();
         return;
       }
-      if (e.key === "Escape" && cashOpen && !charging) {
+
+      if (
+        (e.key === "Escape" || e.code === "Escape") &&
+        cashOpenRef.current &&
+        !chargingRef.current
+      ) {
         e.preventDefault();
-        setCashOpen(false);
+        e.stopPropagation();
+        closeCashRef.current();
         return;
       }
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [cashOpen, charging]);
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, []);
 
   useEffect(() => {
     if (!cashOpen) return;
@@ -563,7 +593,7 @@ export function InvoiceForm({
             <div className="min-w-0 flex-1">
               <Input
                 ref={scanRef}
-                label="SKU / buscar producto"
+                label="SKU / buscar producto (F2 o Alt+S)"
                 value={scanQuery}
                 onChange={(e) => {
                   setScanQuery(e.target.value);
