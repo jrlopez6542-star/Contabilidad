@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "DATABASE_URL=\"file:./dev.db\" prisma generate && next build",
+    "build": "cross-env DATABASE_URL=\"file:./dev.db\" prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
@@ -32,6 +32,7 @@
     "@types/pdfkit": "^0.17.6",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "cross-env": "^10.1.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
