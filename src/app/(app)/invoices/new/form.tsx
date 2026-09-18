@@ -426,7 +426,7 @@ export function InvoiceForm({
   }, [cashOpen]);
 
   return (
-    <div className="space-y-4 pb-28 sm:pb-24">
+    <div className="space-y-4 pb-40 sm:pb-36">
       <Card>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -481,31 +481,6 @@ export function InvoiceForm({
             onChange={(e) => setCustomerName(e.target.value)}
             placeholder={`Cliente ${cedula.trim() || "…"}`}
           />
-          <div className="space-y-2">
-            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-brand-100">
-              Método de pago
-            </span>
-            <div className="mx-auto grid max-w-sm grid-cols-2 gap-2">
-              {SALE_PAYMENT_METHODS.map((m) => {
-                const selected = paymentMethod === m.value;
-                return (
-                  <button
-                    key={m.value}
-                    type="button"
-                    onClick={() => setPaymentMethod(m.value)}
-                    className={`min-h-10 touch-manipulation rounded-lg border-2 px-2 py-2 text-xs font-semibold transition sm:min-h-9 ${
-                      selected
-                        ? "border-brand bg-brand text-white shadow-sm dark:border-brand-light dark:bg-brand-light"
-                        : "border-brand/20 bg-surface text-brand hover:bg-brand-50 dark:border-brand-200/25 dark:text-brand-100 dark:hover:bg-brand-800"
-                    }`}
-                    aria-pressed={selected}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
           <Select
             label="O elegir cliente existente"
             value={customerId}
@@ -756,6 +731,27 @@ export function InvoiceForm({
           <p className="w-full text-center text-lg font-bold text-brand dark:text-brand-100">
             Total: {formatCOP(totals.total)}
           </p>
+          <div className="mx-auto grid w-full max-w-sm grid-cols-2 gap-2">
+            {SALE_PAYMENT_METHODS.map((m) => {
+              const selected = paymentMethod === m.value;
+              return (
+                <button
+                  key={m.value}
+                  type="button"
+                  onClick={() => setPaymentMethod(m.value)}
+                  disabled={charging}
+                  className={`min-h-10 touch-manipulation rounded-lg border-2 px-2 py-2 text-xs font-semibold transition sm:min-h-9 ${
+                    selected
+                      ? "border-brand bg-brand text-white shadow-sm dark:border-brand-light dark:bg-brand-light"
+                      : "border-brand/20 bg-surface text-brand hover:bg-brand-50 dark:border-brand-200/25 dark:text-brand-100 dark:hover:bg-brand-800"
+                  }`}
+                  aria-pressed={selected}
+                >
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
             <Button
               type="button"
