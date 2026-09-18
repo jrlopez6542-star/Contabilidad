@@ -134,8 +134,9 @@ function filterLinks(role: Role, links: NavLink[]): NavLink[] {
 }
 
 /**
- * Slim day-to-day POS sidebar: cobrar, buscar/stock, facturas (opcional),
- * panel, perfil. Admin heavy links live in the gear menu.
+ * Menú lateral POS: Panel, Cobrar, Buscar producto, Stock/precio, Facturas, perfil.
+ * El panel principal del dashboard muestra solo Cobrar.
+ * Admin heavy links live in the gear menu.
  */
 export function posNavLinks(role: Role): NavLink[] {
   const links: NavLink[] = [
