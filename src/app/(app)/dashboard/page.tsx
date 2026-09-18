@@ -33,6 +33,13 @@ export default async function DashboardPage() {
       session.role === "admin" ||
       session.role === "contador");
   const canWriteInvoice = session ? can(session.role, "invoices:write") : false;
+  const lastSale = canWriteInvoice
+    ? await prisma.invoice.findFirst({
+        where: { status: { in: ["issued", "paid"] } },
+        orderBy: [{ issuedAt: "desc" }, { createdAt: "desc" }],
+        select: { id: true, number: true },
+      })
+    : null;
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -122,14 +129,30 @@ export default async function DashboardPage() {
           <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-brand-100">
             Mostrador
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-wrap items-stretch gap-3">
             <Link
               href="/mostrador"
-              className="flex min-h-[5.5rem] touch-manipulation flex-col justify-center rounded-2xl border border-brand/15 bg-brand px-5 py-4 text-white shadow-sm transition hover:bg-brand-dark dark:bg-brand-light dark:hover:bg-brand sm:col-span-2 lg:col-span-2"
+              className="flex min-h-[5.5rem] min-w-[12rem] flex-1 touch-manipulation flex-col justify-center rounded-2xl border border-brand/15 bg-brand px-5 py-4 text-white shadow-sm transition hover:bg-brand-dark dark:bg-brand-light dark:hover:bg-brand sm:max-w-sm"
             >
               <span className="text-lg font-bold tracking-tight">Cobrar</span>
               <span className="mt-1 text-xs text-white/80">Nueva venta en mostrador</span>
             </Link>
+            {lastSale ? (
+              <Link
+                href={`/invoices/${lastSale.id}`}
+                className="flex min-h-[5.5rem] w-full touch-manipulation flex-col justify-center rounded-2xl border border-brand/15 bg-surface px-4 py-3 text-brand shadow-sm transition hover:bg-brand-50 dark:border-brand-200/25 dark:bg-brand-900 dark:text-brand-100 dark:hover:bg-brand-800 sm:w-40 sm:shrink-0"
+              >
+                <span className="text-sm font-semibold tracking-tight">Última venta</span>
+                <span className="mt-1 truncate text-[11px] text-slate-500 dark:text-brand-200">
+                  {lastSale.number} · reimprimir / anular
+                </span>
+              </Link>
+            ) : (
+              <div className="flex min-h-[5.5rem] w-full flex-col justify-center rounded-2xl border border-dashed border-brand/20 bg-surface/60 px-4 py-3 text-slate-400 sm:w-40 sm:shrink-0 dark:border-brand-200/20 dark:text-brand-300">
+                <span className="text-sm font-semibold">Última venta</span>
+                <span className="mt-1 text-[11px]">Aún no hay ventas</span>
+              </div>
+            )}
           </div>
         </section>
       )}

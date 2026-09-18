@@ -382,7 +382,7 @@ export async function buildThermalTicketPdf(opts: {
     // Tiny logo centered (optional)
     if (logoBuf) {
       try {
-        const logoSize = widthMm === 58 ? 36 : 44;
+        const logoSize = widthMm === 58 ? 24 : 30;
         const logoX = (pageWidth - logoSize) / 2;
         doc.image(logoBuf, logoX, y, { fit: [logoSize, logoSize] });
         y += logoSize + 4;

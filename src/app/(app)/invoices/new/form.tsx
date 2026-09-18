@@ -469,7 +469,7 @@ export function InvoiceForm({
             <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-brand-100">
               Método de pago
             </span>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="mx-auto grid max-w-sm grid-cols-2 gap-2">
               {SALE_PAYMENT_METHODS.map((m) => {
                 const selected = paymentMethod === m.value;
                 return (
@@ -477,7 +477,7 @@ export function InvoiceForm({
                     key={m.value}
                     type="button"
                     onClick={() => setPaymentMethod(m.value)}
-                    className={`min-h-12 touch-manipulation rounded-xl border-2 px-3 py-3 text-sm font-semibold transition sm:min-h-11 ${
+                    className={`min-h-10 touch-manipulation rounded-lg border-2 px-2 py-2 text-xs font-semibold transition sm:min-h-9 ${
                       selected
                         ? "border-brand bg-brand text-white shadow-sm dark:border-brand-light dark:bg-brand-light"
                         : "border-brand/20 bg-surface text-brand hover:bg-brand-50 dark:border-brand-200/25 dark:text-brand-100 dark:hover:bg-brand-800"
@@ -764,7 +764,7 @@ export function InvoiceForm({
 
       {cashOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-brand/40 p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-brand/40 p-4"
           role="presentation"
           onClick={closeCashTender}
         >
@@ -772,7 +772,7 @@ export function InvoiceForm({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cash-tender-title"
-            className="w-full max-w-md rounded-t-2xl border border-brand/15 bg-surface p-5 shadow-xl dark:border-brand-200/20 dark:bg-brand-950 sm:rounded-2xl"
+            className="mx-auto w-full max-w-sm rounded-2xl border border-brand/15 bg-surface p-4 shadow-xl dark:border-brand-200/20 dark:bg-brand-950"
             style={{
               paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
             }}
@@ -821,7 +821,7 @@ export function InvoiceForm({
                   }}
                   placeholder="0"
                   disabled={charging}
-                  className="w-full min-h-14 rounded-xl border-2 border-brand/25 bg-surface px-4 py-3 text-center text-3xl font-bold tracking-tight text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:opacity-60 dark:border-brand-200/30 dark:text-brand-50 dark:focus:border-brand-200 dark:focus:ring-brand-800"
+                  className="mx-auto w-full min-h-11 rounded-lg border-2 border-brand/25 bg-surface px-3 py-2 text-center text-2xl font-bold tracking-tight text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand-100 disabled:opacity-60 dark:border-brand-200/30 dark:text-brand-50 dark:focus:border-brand-200 dark:focus:ring-brand-800"
                 />
               </label>
 
@@ -864,7 +864,7 @@ export function InvoiceForm({
                   {cashDiff >= 0 ? "Vuelto" : "Falta"}
                 </span>
                 <span
-                  className={`text-2xl font-bold ${
+                  className={`text-xl font-bold ${
                     cashDiff >= 0
                       ? "text-emerald-700 dark:text-emerald-300"
                       : "text-jam"
