@@ -601,6 +601,25 @@ export async function buildThermalTicketPdf(opts: {
       width: contentWidth,
       align: "center",
     });
+    y = doc.y + 6;
+
+    // Solid black 🫶 (hand-heart) — PNG silhouette for thermal printers
+    try {
+      const heartPath = path.join(
+        process.cwd(),
+        "public",
+        "ticket-heart-hands.png"
+      );
+      if (existsSync(heartPath)) {
+        const heartBuf = readFileSync(heartPath);
+        const heartSize = widthMm === 58 ? 28 : 34;
+        const heartX = (pageWidth - heartSize) / 2;
+        doc.image(heartBuf, heartX, y, { fit: [heartSize, heartSize] });
+        y += heartSize + 2;
+      }
+    } catch {
+      /* optional decoration */
+    }
 
     doc.end();
   } catch (err) {
