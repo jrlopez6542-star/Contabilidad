@@ -41,15 +41,12 @@ function TicketPrintInner() {
         );
         iframe = document.createElement("iframe");
         iframe.style.position = "fixed";
-        iframe.style.left = "50%";
-        iframe.style.top = "50%";
-        iframe.style.transform = "translate(-50%, -50%)";
-        iframe.style.width = "min(420px, 92vw)";
-        iframe.style.height = "min(640px, 85vh)";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "1px";
+        iframe.style.height = "1px";
+        iframe.style.opacity = "0";
         iframe.style.border = "0";
-        iframe.style.borderRadius = "12px";
-        iframe.style.boxShadow = "0 8px 32px rgba(0,0,0,0.25)";
-        iframe.style.background = "#fff";
         iframe.src = objectUrl;
         document.body.appendChild(iframe);
         await new Promise<void>((resolve) => {

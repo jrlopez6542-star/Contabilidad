@@ -27,6 +27,10 @@ const SECURITY_HEADERS = [
       "connect-src 'self'",
       "worker-src 'self'",
       "manifest-src 'self'",
+      // blob: needed so Imprimir ticket can load the PDF in a hidden iframe
+      "frame-src 'self' blob:",
+      "object-src 'self' blob:",
+      "child-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
