@@ -321,6 +321,15 @@ function truncateText(text: string, maxChars: number): string {
   return t.slice(0, Math.max(0, maxChars - 1)) + "…";
 }
 
+/** ASCII-safe COP for PDFKit Helvetica (Intl NBSP/narrow spaces clip on thermal). */
+function formatMoneyThermal(amount: number): string {
+  const n = Math.round(Number(amount) || 0);
+  const body = Math.abs(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${n < 0 ? "-" : ""}$ ${body}`;
+}
+
 export type ThermalWidthMm = 58 | 80;
 
 /**
@@ -347,9 +356,10 @@ export async function buildThermalTicketPdf(opts: {
   const widthMm =
     opts.widthMm === 80 || Number(opts.widthMm) === 80 ? 80 : 58;
   const pageWidth = Math.round(mmToPt(widthMm)); // ~164 or ~227
-  const margin = widthMm === 58 ? 8 : 10;
+  // Extra margin: many 58mm printers have a dead zone on the right.
+  const margin = widthMm === 58 ? 12 : 12;
   const contentWidth = pageWidth - margin * 2;
-  const maxDescChars = widthMm === 58 ? 28 : 36;
+  const maxDescChars = widthMm === 58 ? 26 : 36;
 
   // Estimate height from content (grow with line items)
   const estimated =
@@ -500,13 +510,21 @@ export async function buildThermalTicketPdf(opts: {
       doc.text(desc, margin, y, { width: contentWidth });
       y = doc.y + 1;
       doc.fontSize(7);
-      const qtyLine = `${item.quantity} x ${formatCOP(item.unitPrice)}`;
-      doc.text(qtyLine, margin, y, { width: contentWidth * 0.55, align: "left" });
-      doc.text(formatCOP(item.lineTotal), margin + contentWidth * 0.45, y, {
-        width: contentWidth * 0.55,
-        align: "right",
+      const qtyLine = `${item.quantity} x ${formatMoneyThermal(item.unitPrice)}`;
+      const lineTotal = formatMoneyThermal(item.lineTotal);
+      const leftW = Math.floor(contentWidth * 0.52);
+      const rightW = contentWidth - leftW;
+      doc.text(qtyLine, margin, y, {
+        width: leftW,
+        align: "left",
+        lineBreak: false,
       });
-      y = Math.max(doc.y, y + 10) + 3;
+      doc.text(lineTotal, margin + leftW, y, {
+        width: rightW,
+        align: "right",
+        lineBreak: false,
+      });
+      y += 11;
     }
 
     y += 2;
@@ -520,19 +538,26 @@ export async function buildThermalTicketPdf(opts: {
 
     doc.font("Helvetica").fontSize(8).fillColor(ink);
     const row = (label: string, value: string, bold = false) => {
-      if (bold) doc.font("Helvetica-Bold").fontSize(10);
+      if (bold) doc.font("Helvetica-Bold").fontSize(9);
       else doc.font("Helvetica").fontSize(8);
-      doc.text(label, margin, y, { width: contentWidth * 0.45, align: "left" });
-      doc.text(value, margin + contentWidth * 0.4, y, {
-        width: contentWidth * 0.6,
-        align: "right",
+      const labelW = Math.floor(contentWidth * 0.4);
+      const valueW = contentWidth - labelW;
+      doc.text(label, margin, y, {
+        width: labelW,
+        align: "left",
+        lineBreak: false,
       });
-      y += bold ? 14 : 12;
+      doc.text(value, margin + labelW, y, {
+        width: valueW,
+        align: "right",
+        lineBreak: false,
+      });
+      y += bold ? 13 : 11;
     };
 
-    row("Subtotal", formatCOP(opts.subtotal));
-    row("IVA", formatCOP(opts.ivaTotal));
-    row("TOTAL", formatCOP(opts.total), true);
+    row("Subtotal", formatMoneyThermal(opts.subtotal));
+    row("IVA", formatMoneyThermal(opts.ivaTotal));
+    row("TOTAL", formatMoneyThermal(opts.total), true);
 
     if (opts.notes) {
       y += 4;
