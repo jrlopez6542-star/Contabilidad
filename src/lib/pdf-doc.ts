@@ -610,6 +610,13 @@ export async function buildThermalTicketPdf(opts: {
       width: contentWidth,
       align: "center",
     });
+    y = doc.y + 4;
+
+    doc.font("Helvetica").fontSize(7);
+    doc.text("Un gusto ser parte de tus antojos", margin, y, {
+      width: contentWidth,
+      align: "center",
+    });
     y = doc.y + 6;
 
     // Solid black 🫶 (hand-heart) — PNG silhouette for thermal printers
@@ -629,13 +636,6 @@ export async function buildThermalTicketPdf(opts: {
     } catch {
       /* optional decoration */
     }
-
-    y += 4;
-    doc.font("Helvetica").fontSize(7);
-    doc.text("Un gusto ser parte de tus antojos", margin, y, {
-      width: contentWidth,
-      align: "center",
-    });
 
     doc.end();
   } catch (err) {
