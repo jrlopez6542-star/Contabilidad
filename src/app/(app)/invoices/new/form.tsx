@@ -509,16 +509,8 @@ export function InvoiceForm({
       </Card>
 
       <Card>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-3">
           <h2 className="text-sm font-semibold">Líneas</h2>
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full sm:w-auto"
-            onClick={addLine}
-          >
-            + Línea
-          </Button>
         </div>
 
         <div className="mb-4 space-y-2">
@@ -696,6 +688,17 @@ export function InvoiceForm({
               </div>
             );
           })}
+        </div>
+
+        <div className="mt-4">
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={addLine}
+          >
+            + Línea
+          </Button>
         </div>
 
         <div className="mt-6 flex flex-col items-end gap-1 text-sm">
