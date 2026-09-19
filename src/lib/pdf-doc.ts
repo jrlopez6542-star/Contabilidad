@@ -632,7 +632,7 @@ export async function buildThermalTicketPdf(opts: {
 
     y += 4;
     doc.font("Helvetica").fontSize(7);
-    doc.text("¡Gracias por tu compra!", margin, y, {
+    doc.text("Un gusto ser parte de tus antojos", margin, y, {
       width: contentWidth,
       align: "center",
     });
