@@ -630,6 +630,13 @@ export async function buildThermalTicketPdf(opts: {
       /* optional decoration */
     }
 
+    y += 4;
+    doc.font("Helvetica").fontSize(7);
+    doc.text("Un gusto ser parte de tus antojos", margin, y, {
+      width: contentWidth,
+      align: "center",
+    });
+
     doc.end();
   } catch (err) {
     try {
