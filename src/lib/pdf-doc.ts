@@ -605,8 +605,9 @@ export async function buildThermalTicketPdf(opts: {
       .lineWidth(0.8)
       .stroke();
     y += 8;
-    doc.font("Helvetica").fontSize(8);
-    doc.text("Un gusto ser parte de tus antojos", margin, y, {
+    // Closing tagline — distinct serif italic vs rest of ticket
+    doc.font("Times-BoldItalic").fontSize(9);
+    doc.text("¡Un gusto ser parte de tus antojos!", margin, y, {
       width: contentWidth,
       align: "center",
     });
