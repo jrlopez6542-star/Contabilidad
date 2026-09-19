@@ -355,12 +355,14 @@ export async function buildThermalTicketPdf(opts: {
 }): Promise<Buffer> {
   const widthMm =
     opts.widthMm === 80 || Number(opts.widthMm) === 80 ? 80 : 58;
-  // Full roll width with tight margins; content centered on the paper.
-  const designMm = widthMm === 80 ? 80 : 58;
+  // Narrower than the physical 58mm roll so Windows/Chrome don't clip the
+  // right edge. Small left margin biases content left (tickets were printing
+  // shifted to the right on POS-58).
+  const designMm = widthMm === 80 ? 72 : 48;
   const pageWidth = Math.round(mmToPt(designMm));
-  const margin = widthMm === 58 ? 4 : 6;
+  const margin = widthMm === 58 ? 3 : 6;
   const contentWidth = pageWidth - margin * 2;
-  const maxDescChars = widthMm === 58 ? 28 : 40;
+  const maxDescChars = widthMm === 58 ? 24 : 38;
 
   // Estimate height from content (grow with line items)
   const estimated =
@@ -407,7 +409,7 @@ export async function buildThermalTicketPdf(opts: {
     }
     if (headerLogo) {
       try {
-        const logoSize = widthMm === 58 ? 52 : 64;
+        const logoSize = widthMm === 58 ? 44 : 64;
         const logoX = (pageWidth - logoSize) / 2;
         doc.image(headerLogo, logoX, y, { fit: [logoSize, logoSize] });
         y += logoSize + 3;
@@ -605,11 +607,12 @@ export async function buildThermalTicketPdf(opts: {
       .lineWidth(0.8)
       .stroke();
     y += 8;
-    // Closing tagline — distinct serif italic vs rest of ticket
-    doc.font("Times-BoldItalic").fontSize(9);
+    // Closing tagline — one line, distinct italic, sized to fit 58mm
+    doc.font("Times-BoldItalic").fontSize(7);
     doc.text("¡Un gusto ser parte de tus antojos!", margin, y, {
       width: contentWidth,
       align: "center",
+      lineBreak: false,
     });
     y = doc.y + 6;
 
