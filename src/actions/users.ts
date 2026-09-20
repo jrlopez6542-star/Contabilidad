@@ -67,8 +67,8 @@ export async function createUserAction(formData: FormData) {
   if (password !== passwordConfirm) {
     return { error: "Las contraseñas no coinciden." };
   }
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
+  if (password.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -205,8 +205,8 @@ export async function setUserPasswordAction(formData: FormData) {
   if (password !== passwordConfirm) {
     return { error: "Las contraseñas no coinciden." };
   }
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
+  if (password.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
   }
 
   const user = await prisma.user.findUnique({ where: { id } });
@@ -296,8 +296,8 @@ export async function changeOwnPasswordAction(formData: FormData) {
   if (!currentPassword || !password) {
     return { error: "Complete todos los campos de contraseña." };
   }
-  if (password.length < 6) {
-    return { error: "La nueva contraseña debe tener al menos 6 caracteres." };
+  if (password.length < 8) {
+    return { error: "La nueva contraseña debe tener al menos 8 caracteres." };
   }
   if (password !== confirmPassword) {
     return { error: "La confirmación no coincide." };

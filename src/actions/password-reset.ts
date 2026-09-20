@@ -4,6 +4,11 @@ import { createHash, randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { appBaseUrl, sendEmail } from "@/lib/email";
+import {
+  isPasswordResetRateLimited,
+  recordPasswordResetRequest,
+} from "@/lib/rate-limit";
+import { headers } from "next/headers";
 
 const GENERIC_OK =
   "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.";
@@ -20,6 +25,17 @@ export async function requestPasswordResetAction(formData: FormData) {
   if (!email || !email.includes("@")) {
     return { error: "Ingrese un correo electrónico válido." };
   }
+
+  const ip =
+    headers().get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headers().get("x-real-ip") ||
+    "";
+
+  if (await isPasswordResetRateLimited(email)) {
+    // Same generic OK — do not reveal that rate limit tripped for a given address.
+    return { ok: true, message: GENERIC_OK };
+  }
+  await recordPasswordResetRequest(email, ip);
 
   // Same response for every address: enumeration-safe, but honest when Resend
   // is missing so users are not told an email was sent when it cannot be.
@@ -97,8 +113,8 @@ export async function resetPasswordAction(formData: FormData) {
   if (!token) {
     return { error: "Enlace inválido o incompleto." };
   }
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
+  if (password.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
   }
   if (password !== confirm) {
     return { error: "Las contraseñas no coinciden." };

@@ -9,6 +9,11 @@ export function isDataImageUrl(url: string): boolean {
   return url.startsWith("data:image/");
 }
 
+/** Raster data URLs only — block SVG data URLs (scriptable). */
+export function isSafeDataImageUrl(url: string): boolean {
+  return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(url);
+}
+
 /**
  * Ephemeral filesystem uploads under /public/uploads do not persist on Vercel.
  * Treat those paths as invalid so UI falls back to the bundled default logo.
@@ -19,9 +24,11 @@ export function isEphemeralUploadPath(url: string): boolean {
 
 export function isAllowedLogoUrl(url: string): boolean {
   if (!url) return false;
-  if (isDataImageUrl(url)) return true;
+  if (isDataImageUrl(url)) return isSafeDataImageUrl(url);
   if (isEphemeralUploadPath(url)) return false;
+  // Solo paths relativos del origen (no protocol-relative //evil).
   if (url.startsWith("/") && !url.startsWith("//")) return true;
+  // Remotos http(s) permitidos solo como <img src>; no se fetchean en servidor.
   if (/^https?:\/\//i.test(url)) return true;
   return false;
 }

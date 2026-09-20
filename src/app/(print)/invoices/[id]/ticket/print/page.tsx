@@ -8,7 +8,13 @@ function TicketPrintInner() {
   const search = useSearchParams();
   const id = String(params?.id || "");
   const nextRaw = search.get("next") || `/invoices/${id}`;
-  const next = nextRaw.startsWith("/") ? nextRaw : `/invoices/${id}`;
+  // Solo rutas relativas de este origen (bloquea //evil.com y javascript:).
+  const next =
+    nextRaw.startsWith("/") &&
+    !nextRaw.startsWith("//") &&
+    !nextRaw.toLowerCase().startsWith("/\\")
+      ? nextRaw
+      : `/invoices/${id}`;
 
   useEffect(() => {
     if (!id) return;
