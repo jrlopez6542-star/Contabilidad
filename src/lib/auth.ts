@@ -4,7 +4,11 @@ import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { can, isRole, type Permission, type Role } from "./roles";
-import { isLoginRateLimited, recordLoginAttempt } from "./rate-limit";
+import {
+  isLoginIpRateLimited,
+  isLoginRateLimited,
+  recordLoginAttempt,
+} from "./rate-limit";
 import { writeAudit } from "./audit";
 
 const COOKIE_NAME = "contabilidad_session";
@@ -16,16 +20,18 @@ let warnedWeakSecret = false;
 
 function getSecret() {
   const secret = process.env.AUTH_SECRET;
-  if (
-    process.env.NODE_ENV === "production" &&
-    (!secret || secret === "dev-secret")
-  ) {
-    if (!warnedWeakSecret) {
-      warnedWeakSecret = true;
-      console.error(
-        "[auth] CRÍTICO: AUTH_SECRET ausente o igual a 'dev-secret' en producción. Configure un secreto fuerte en Vercel (Environment Variables)."
-      );
-    }
+  const weak = !secret || secret === "dev-secret" || secret.length < 32;
+  if (process.env.NODE_ENV === "production" && weak) {
+    // Fail closed: a guessable AUTH_SECRET would forge sessions.
+    throw new Error(
+      "[auth] CRÍTICO: AUTH_SECRET ausente, 'dev-secret' o demasiado corto (<32). Configure un secreto fuerte."
+    );
+  }
+  if (weak && !warnedWeakSecret) {
+    warnedWeakSecret = true;
+    console.warn(
+      "[auth] AUTH_SECRET débil o ausente; usando fallback solo en desarrollo."
+    );
   }
   return new TextEncoder().encode(secret || "dev-secret");
 }
@@ -135,7 +141,10 @@ export async function assertPermission(
 export async function login(email: string, password: string, ip = "") {
   const normalized = email.trim().toLowerCase();
 
-  if (await isLoginRateLimited(normalized)) {
+  if (
+    (await isLoginRateLimited(normalized)) ||
+    (await isLoginIpRateLimited(ip))
+  ) {
     return {
       error:
         "Demasiados intentos fallidos. Intente de nuevo en 15 minutos.",

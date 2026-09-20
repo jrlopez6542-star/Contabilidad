@@ -17,7 +17,7 @@ const ALLOWED_LOGO = new Set([
   "image/jpeg",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
+  // SVG omitido a propósito: puede embeber script/XSS si se sirve como data URL.
 ]);
 
 /** Store the image as a data URL in the DB (Vercel has an ephemeral filesystem). */
@@ -25,7 +25,7 @@ async function saveLogoUpload(file: File | null): Promise<string | null> {
   if (!file || !file.size) return null;
   if (!ALLOWED_LOGO.has(file.type)) {
     throw new Error(
-      "Formato de logo no permitido (use PNG, JPG, WEBP, GIF o SVG)."
+      "Formato de logo no permitido (use PNG, JPG, WEBP o GIF)."
     );
   }
   if (file.size > MAX_LOGO_FILE_BYTES) {

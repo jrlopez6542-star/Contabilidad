@@ -203,6 +203,7 @@ export async function GET(req: NextRequest) {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="${name}"`,
+        "Cache-Control": "no-store",
       },
     });
   }
@@ -218,6 +219,7 @@ export async function GET(req: NextRequest) {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": 'attachment; filename="contabilidad-backup.csv.zip"',
+      "Cache-Control": "no-store",
     },
   });
 }

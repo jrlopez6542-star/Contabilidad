@@ -13,16 +13,17 @@ let warnedWeakSecret = false;
 
 function getSecret() {
   const secret = process.env.AUTH_SECRET;
-  if (
-    process.env.NODE_ENV === "production" &&
-    (!secret || secret === "dev-secret")
-  ) {
-    if (!warnedWeakSecret) {
-      warnedWeakSecret = true;
-      console.error(
-        "[middleware] CRÍTICO: AUTH_SECRET ausente o igual a 'dev-secret' en producción. Configure un secreto fuerte en Vercel."
-      );
-    }
+  const weak = !secret || secret === "dev-secret" || secret.length < 32;
+  if (process.env.NODE_ENV === "production" && weak) {
+    throw new Error(
+      "[middleware] CRÍTICO: AUTH_SECRET ausente, 'dev-secret' o demasiado corto (<32)."
+    );
+  }
+  if (weak && !warnedWeakSecret) {
+    warnedWeakSecret = true;
+    console.warn(
+      "[middleware] AUTH_SECRET débil o ausente; usando fallback solo en desarrollo."
+    );
   }
   return new TextEncoder().encode(secret || "dev-secret");
 }
