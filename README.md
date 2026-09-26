@@ -174,10 +174,14 @@ En el proyecto Vercel → **Settings → Environment Variables**:
 | `APP_URL` | URL pública sin slash final (enlaces de reset) |
 | `RESEND_API_KEY` | API key de Resend |
 | `RESEND_FROM` | p. ej. `Buñuelandia <onboarding@resend.dev>` (pruebas) |
+| `CRON_SECRET` | secreto aleatorio (p. ej. `openssl rand -hex 32`) para el respaldo diario |
+| `BACKUP_EMAILS` | destinatarios del respaldo diario (coma); si falta usa el email de la empresa |
 
 `DATABASE_AUTH_TOKEN` es un alias opcional de `TURSO_AUTH_TOKEN`.
 
 Recuperación de contraseña: `/forgot-password` → email vía Resend → `/reset-password?token=…` (token hasheado, 1 h, un solo uso). SQL Turso: `turso-migrate-password-reset.sql`.
+
+Respaldo diario automático: `vercel.json` programa un Vercel Cron (`0 8 * * *` UTC ≈ 3:00 a. m. Bogotá) que llama `GET /api/cron/backup`. La ruta exige `Authorization: Bearer $CRON_SECRET` (Vercel lo envía solo) y envía por Resend el mismo ZIP de CSV que `/backup/export`. Sin `CRON_SECRET` la ruta responde 401 (deshabilitada). Los cron jobs solo corren en el deployment de producción. Prueba manual: `curl -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/backup`.
 
 ### 4. Deploy
 

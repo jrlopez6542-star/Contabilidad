@@ -7,6 +7,7 @@ import { destroySession, login } from "@/lib/auth";
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
+  const remember = formData.get("remember") === "on";
   if (!email || !password) {
     return { error: "Correo y contraseña son obligatorios." };
   }
@@ -14,7 +15,7 @@ export async function loginAction(formData: FormData) {
     headers().get("x-forwarded-for")?.split(",")[0]?.trim() ||
     headers().get("x-real-ip") ||
     "";
-  const user = await login(email, password, ip);
+  const user = await login(email, password, ip, remember);
   if (user && "error" in user) {
     return { error: user.error };
   }

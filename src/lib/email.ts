@@ -3,11 +3,18 @@
  * Requires RESEND_API_KEY. Optional RESEND_FROM (default onboarding@resend.dev).
  */
 
+export type EmailAttachment = {
+  filename: string;
+  /** Contenido en base64. */
+  content: string;
+};
+
 export async function sendEmail(opts: {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
   text?: string;
+  attachments?: EmailAttachment[];
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -27,10 +34,11 @@ export async function sendEmail(opts: {
       },
       body: JSON.stringify({
         from,
-        to: [opts.to],
+        to: Array.isArray(opts.to) ? opts.to : [opts.to],
         subject: opts.subject,
         html: opts.html,
         text: opts.text,
+        ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
       }),
     });
 

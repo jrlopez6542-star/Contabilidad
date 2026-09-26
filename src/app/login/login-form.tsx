@@ -15,6 +15,8 @@ import {
 import { ViewModeToggle } from "@/components/view-mode-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+const REMEMBER_EMAIL_KEY = "contabilidad:remember-email";
+
 export function LoginForm({
   companyName: initialName = DEFAULT_COMPANY_NAME,
   logoUrl: initialLogo = DEFAULT_LOGO,
@@ -28,6 +30,16 @@ export function LoginForm({
   const idleMsg = searchParams.get("msg");
   const [companyName, setCompanyName] = useState(initialName);
   const [logoUrl, setLogoUrl] = useState(companyLogoSrc(initialLogo));
+  const [rememberedEmail, setRememberedEmail] = useState<string | null>(null);
+
+  // "Recordarme": precarga el último correo guardado en este dispositivo.
+  useEffect(() => {
+    try {
+      setRememberedEmail(localStorage.getItem(REMEMBER_EMAIL_KEY) || "");
+    } catch {
+      setRememberedEmail("");
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +70,18 @@ export function LoginForm({
     setError(null);
     try {
       const formData = new FormData(form);
+      try {
+        if (formData.get("remember") === "on") {
+          localStorage.setItem(
+            REMEMBER_EMAIL_KEY,
+            String(formData.get("email") || "").trim().toLowerCase()
+          );
+        } else {
+          localStorage.removeItem(REMEMBER_EMAIL_KEY);
+        }
+      } catch {
+        /* localStorage no disponible */
+      }
       const result = await loginAction(formData);
       if (result?.error) {
         setError(result.error);
@@ -87,18 +111,32 @@ export function LoginForm({
         <Card className="border-brand/15 shadow-md">
           <form onSubmit={onSubmit} className="space-y-4">
             <Input
+              key={rememberedEmail === null ? "email" : "email-ready"}
               label="Correo electrónico"
               name="email"
               type="email"
               required
               autoComplete="username"
+              defaultValue={rememberedEmail ?? ""}
+              autoFocus={rememberedEmail === ""}
             />
             <PasswordInput
+              key={rememberedEmail === null ? "pw" : "pw-ready"}
               label="Contraseña"
               name="password"
               required
               autoComplete="current-password"
+              autoFocus={!!rememberedEmail}
             />
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-brand-100">
+              <input
+                key={rememberedEmail === null ? "rem" : "rem-ready"}
+                type="checkbox"
+                name="remember"
+                defaultChecked={!!rememberedEmail}
+              />
+              Recordarme en este dispositivo (30 días)
+            </label>
             {idleMsg && !error && (
               <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-brand-800 dark:text-brand-100">
                 {idleMsg}

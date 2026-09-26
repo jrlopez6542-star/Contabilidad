@@ -28,6 +28,40 @@ function getSecret() {
   return new TextEncoder().encode(secret || "dev-secret");
 }
 
+/**
+ * CSP con nonce por petición (reemplaza 'unsafe-inline' en script-src).
+ * Next 14 lee el nonce del header Content-Security-Policy de la petición y lo
+ * aplica a sus propios scripts; el layout lo usa para el script de arranque
+ * (tema / modo de vista) vía el header x-nonce.
+ * 'strict-dynamic' permite los chunks que Next carga desde scripts con nonce.
+ * style-src mantiene 'unsafe-inline' (atributos style de React / Next).
+ */
+function buildCsp(nonce: string): string {
+  const isDev = process.env.NODE_ENV !== "production";
+  return [
+    "default-src 'self'",
+    "img-src 'self' data: blob:",
+    "style-src 'self' 'unsafe-inline'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    // blob: needed so Imprimir ticket can load the PDF in a hidden iframe
+    "frame-src 'self' blob:",
+    "object-src 'self' blob:",
+    "child-src 'self' blob:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
+function withCsp(response: NextResponse, csp: string): NextResponse {
+  response.headers.set("Content-Security-Policy", csp);
+  return response;
+}
+
 function isStaticPublicAsset(pathname: string): boolean {
   return (
     pathname.startsWith("/uploads/") ||
@@ -54,14 +88,20 @@ export async function middleware(request: NextRequest) {
   const isForgot =
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password");
+  // Vercel Cron: autenticado por CRON_SECRET dentro de la ruta (sin sesión).
+  const isCronApi = pathname.startsWith("/api/cron/");
   const isBrandingApi =
     pathname === "/api/branding" || pathname.startsWith("/api/branding/");
   const isPublic =
     isLogin ||
     isForgot ||
     isBrandingApi ||
+    isCronApi ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon");
+
+  const nonce = btoa(crypto.randomUUID());
+  const csp = buildCsp(nonce);
 
   const token = request.cookies.get(COOKIE_NAME)?.value;
   let authenticated = false;
@@ -79,13 +119,13 @@ export async function middleware(request: NextRequest) {
   if (!authenticated && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return withCsp(NextResponse.redirect(url), csp);
   }
 
   if (authenticated && isLogin) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return withCsp(NextResponse.redirect(url), csp);
   }
 
   if (authenticated && role && isRole(role)) {
@@ -95,16 +135,21 @@ export async function middleware(request: NextRequest) {
       if (!perms.includes(needed)) {
         const url = request.nextUrl.clone();
         url.pathname = "/dashboard";
-        return NextResponse.redirect(url);
+        return withCsp(NextResponse.redirect(url), csp);
       }
     }
   }
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);
-  return NextResponse.next({
-    request: { headers: requestHeaders },
-  });
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+  return withCsp(
+    NextResponse.next({
+      request: { headers: requestHeaders },
+    }),
+    csp
+  );
 }
 
 export const config = {
