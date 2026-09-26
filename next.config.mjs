@@ -14,29 +14,17 @@ const SECURITY_HEADERS = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  // Medium CSP: allows theme/view boot inline scripts in layout; avoids breaking Next 14.
-  // No 'unsafe-eval' — App Router production builds do not need it.
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "img-src 'self' data: blob:",
-      "style-src 'self' 'unsafe-inline'",
-      "script-src 'self' 'unsafe-inline'",
-      "font-src 'self' data:",
-      "connect-src 'self'",
-      "worker-src 'self'",
-      "manifest-src 'self'",
-      // blob: needed so Imprimir ticket can load the PDF in a hidden iframe
-      "frame-src 'self' blob:",
-      "object-src 'self' blob:",
-      "child-src 'self' blob:",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join("; "),
-  },
+  // Content-Security-Policy for pages/route handlers is set per request in
+  // src/middleware.ts (nonce-based, no 'unsafe-inline' scripts).
 ];
+
+// Static assets skip middleware; give them a locked-down CSP so a user-uploaded
+// file opened directly (e.g. an SVG logo) cannot run scripts.
+const STATIC_ASSET_CSP = {
+  key: "Content-Security-Policy",
+  value:
+    "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox",
+};
 
 const STATIC_ASSET_CACHE =
   "public, max-age=86400, stale-while-revalidate=604800";
@@ -87,6 +75,10 @@ const nextConfig = {
       {
         source: "/:path*",
         headers: SECURITY_HEADERS,
+      },
+      {
+        source: "/uploads/:path*",
+        headers: [STATIC_ASSET_CSP],
       },
       {
         source: "/icons/:path*",

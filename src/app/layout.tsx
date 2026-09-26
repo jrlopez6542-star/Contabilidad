@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import { VIEW_MODE_BOOT_SCRIPT } from "@/lib/view-mode";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
@@ -49,10 +50,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Nonce por petición generado en middleware (CSP sin 'unsafe-inline').
+  const nonce = headers().get("x-nonce") ?? undefined;
   return (
     <html lang="es-CO" data-view-mode="auto" suppressHydrationWarning>
       <head>
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `${THEME_BOOT_SCRIPT}${VIEW_MODE_BOOT_SCRIPT}`,
           }}

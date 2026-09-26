@@ -15,6 +15,8 @@ const COOKIE_NAME = "contabilidad_session";
 
 /** Session length: 7 days balances UX for caja/mostrador vs re-auth frequency. */
 const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 7;
+/** "Recordarme" en este dispositivo: 30 días. */
+const REMEMBER_MAX_AGE_SEC = 60 * 60 * 24 * 30;
 
 let warnedWeakSecret = false;
 
@@ -70,7 +72,8 @@ function cookieOpts(maxAge: number) {
   };
 }
 
-export async function createSession(user: SessionUser) {
+export async function createSession(user: SessionUser, remember = false) {
+  const maxAge = remember ? REMEMBER_MAX_AGE_SEC : SESSION_MAX_AGE_SEC;
   const token = await new SignJWT({
     id: user.id,
     email: user.email,
@@ -79,10 +82,10 @@ export async function createSession(user: SessionUser) {
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime(Math.floor(Date.now() / 1000) + maxAge)
     .sign(getSecret());
 
-  cookies().set(COOKIE_NAME, token, cookieOpts(SESSION_MAX_AGE_SEC));
+  cookies().set(COOKIE_NAME, token, cookieOpts(maxAge));
 }
 
 export async function destroySession() {
@@ -138,7 +141,12 @@ export async function assertPermission(
   return requirePermission(permission);
 }
 
-export async function login(email: string, password: string, ip = "") {
+export async function login(
+  email: string,
+  password: string,
+  ip = "",
+  remember = false
+) {
   const normalized = email.trim().toLowerCase();
 
   if (
@@ -171,7 +179,13 @@ export async function login(email: string, password: string, ip = "") {
     name: user.name,
     role: user.role,
   };
-  await createSession(sessionUser);
-  await writeAudit(sessionUser, "login", "user", user.id, `Inicio de sesión (${user.email})`);
+  await createSession(sessionUser, remember);
+  await writeAudit(
+    sessionUser,
+    "login",
+    "user",
+    user.id,
+    `Inicio de sesión (${user.email})${remember ? " · recordarme 30 días" : ""}`
+  );
   return sessionUser;
 }
