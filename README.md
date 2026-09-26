@@ -101,7 +101,8 @@ Los usuarios inactivos no pueden iniciar sesión. La desactivación es soft (no 
 ## Módulos (pack profesional)
 
 1. **Auth + roles** — login rate-limit (5 fallos / 15 min); cookie httpOnly + `secure` en prod; roles superadmin / admin / vendedor / contador
-2. **Usuarios** — CRUD (admin/superadmin); solo superadmin gestiona cuentas `superadmin`; restablecer contraseña, activar/desactivar; **Mi perfil**
+2. **PIN de caja** — vendedor/contador pueden tener PIN (4–6 dígitos, bcrypt) asignado por el superusuario en Usuarios. Tras un login completo, el dispositivo recuerda al cajero (cookie firmada httpOnly, 90 días) y el login muestra acceso rápido con PIN, también para desbloquear tras inactividad. 5 PIN erróneos bloquean el PIN hasta un login con contraseña; límite por IP compartido con el login; auditoría `pin_login` / `pin_login_failed` / `pin_lockout`. Admin/superadmin siempre usan contraseña.
+3. **Usuarios** — CRUD (admin/superadmin); solo superadmin gestiona cuentas `superadmin`; restablecer contraseña, activar/desactivar; **Mi perfil**
 3. **Empresa / branding** — razón social, NIT, logo (data URL en DB o ruta pública), prefijos FV/COT, días alerta vencidas
 4. **Productos + inventario** — stock / mínimo / trackStock; baja al emitir factura; ajuste de stock (admin); alertas en panel
 5. **Clientes** — nombre, NIT/CC, correo, teléfono, dirección
@@ -120,7 +121,14 @@ Tras desplegar código nuevo sobre una DB Turso existente:
 ```bash
 turso db shell contabilidad < turso-migrate-professional.sql
 turso db shell contabilidad < turso-migrate-password-reset.sql
+turso db shell contabilidad < turso-migrate-pin-cajeros.sql   # PIN de cajeros
 ```
+
+`turso-migrate-pin-cajeros.sql` agrega 3 columnas nullable a `User`
+(`pinHash`, `pinFailedAttempts`, `pinLockedAt`). Es aditivo y debe aplicarse
+**antes** de desplegar el código de PIN (Prisma selecciona todas las columnas
+de `User`; sin ellas el login falla). El código anterior sigue funcionando con
+las columnas nuevas, así que aplicarlo primero no tiene riesgo.
 
 Estos dos archivos son los cambios exactos desde el esquema de producción original;
 aplique `turso-migrate-professional.sql` una sola vez. El segundo usa

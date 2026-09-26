@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default async function ImpresoraHelpPage() {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect("/login?expired=1");
 
   return (
     <div>

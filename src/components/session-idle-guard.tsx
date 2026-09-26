@@ -12,7 +12,7 @@ const CHECK_EVERY_MS = 15_000;
  * Cierra la sesión si el usuario deja la app quieta o sale del navegador
  * un rato, y redirige al login.
  */
-export function SessionIdleGuard() {
+export function SessionIdleGuard({ userId }: { userId?: string } = {}) {
   const lastActiveRef = useRef(Date.now());
   const hiddenAtRef = useRef<number | null>(null);
   const lockingRef = useRef(false);
@@ -25,12 +25,15 @@ export function SessionIdleGuard() {
     } catch {
       /* ignore */
     }
+    // u=<id>: si es un cajero de confianza en este dispositivo, el login
+    // ofrece desbloquear con PIN en lugar de la contraseña.
     window.location.href =
       "/login?razon=inactividad&msg=" +
       encodeURIComponent(
         "Sesión cerrada por inactividad. Vuelve a iniciar sesión."
-      );
-  }, []);
+      ) +
+      (userId ? `&u=${encodeURIComponent(userId)}` : "");
+  }, [userId]);
 
   useEffect(() => {
     const bump = () => {

@@ -18,6 +18,12 @@ model User {
   name         String
   role         String   @default("vendedor") // superadmin | admin | vendedor | contador
   active       Boolean  @default(true)
+  /// PIN de caja (bcrypt). Solo roles no administrativos (vendedor, contador).
+  pinHash           String?
+  /// Fallos de PIN consecutivos (null = 0). 5 => bloqueo.
+  pinFailedAttempts Int?
+  /// Si no es null, el PIN está bloqueado hasta un login con contraseña.
+  pinLockedAt       DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   passwordResetTokens PasswordResetToken[]
@@ -203,7 +209,7 @@ model AuditLog {
   id         String   @id @default(cuid())
   userId     String?
   userEmail  String   @default("")
-  action     String // create|update|delete|adjust|issue|void|convert|login
+  action     String // create|update|delete|adjust|issue|void|convert|login|pin_login|pin_login_failed|pin_lockout
   entity     String // product|customer|invoice|quote|expense|company|user|payment|stock
   entityId   String   @default("")
   summary    String

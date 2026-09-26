@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
+import { getTrustedCashiers, type TrustedCashier } from "@/lib/auth";
 import {
   companyLogoSrc,
   DEFAULT_COMPANY_NAME,
@@ -22,9 +23,20 @@ export default async function LoginPage() {
   } catch {
     /* keep defaults */
   }
+  // Cajeros recordados en este dispositivo (cookie firmada) para acceso con PIN.
+  let cashiers: TrustedCashier[] = [];
+  try {
+    cashiers = await getTrustedCashiers();
+  } catch {
+    cashiers = [];
+  }
   return (
     <Suspense fallback={<div className="min-h-screen bg-cream" />}>
-      <LoginForm companyName={companyName} logoUrl={logoUrl} />
+      <LoginForm
+        companyName={companyName}
+        logoUrl={logoUrl}
+        cashiers={cashiers}
+      />
     </Suspense>
   );
 }
