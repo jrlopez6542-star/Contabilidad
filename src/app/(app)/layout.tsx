@@ -13,7 +13,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect("/login?expired=1");
 
   const path =
     headers().get("x-pathname") ||
@@ -32,6 +32,7 @@ export default async function AppLayout({
 
   return (
     <AppShell
+      userId={session.id}
       userName={session.name}
       userRole={session.role}
       companyName={companyName}

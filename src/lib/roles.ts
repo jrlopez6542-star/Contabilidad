@@ -103,6 +103,13 @@ export function isRole(value: string): value is Role {
   return (ROLES as readonly string[]).includes(value);
 }
 
+/** Roles de caja que pueden usar PIN. Los roles administrativos siempre usan contraseña. */
+export const PIN_ROLES: readonly Role[] = ["vendedor", "contador"];
+
+export function canUsePin(role: string): boolean {
+  return isRole(role) && PIN_ROLES.includes(role);
+}
+
 export function can(role: Role, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
 }

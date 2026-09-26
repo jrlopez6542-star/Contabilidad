@@ -4,6 +4,7 @@ import {
   ROLE_LABELS,
   assignableRoles,
   canManageTargetRole,
+  canUsePin,
   isRole,
   type Role,
 } from "@/lib/roles";
@@ -23,6 +24,8 @@ export default async function UsersPage() {
       role: true,
       active: true,
       createdAt: true,
+      pinHash: true,
+      pinLockedAt: true,
     },
   });
 
@@ -97,6 +100,14 @@ export default async function UsersPage() {
                     role: targetRole,
                     active: u.active,
                   }}
+                  pin={
+                    canUsePin(u.role)
+                      ? {
+                          hasPin: !!u.pinHash,
+                          locked: !!u.pinLockedAt,
+                        }
+                      : null
+                  }
                   assignableRoles={rolesForActor}
                   canManage={
                     isRole(u.role) &&

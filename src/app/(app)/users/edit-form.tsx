@@ -3,7 +3,9 @@
 import { useState } from "react";
 import {
   activateUserAction,
+  clearUserPinAction,
   deactivateUserAction,
+  setUserPinAction,
   setUserPasswordAction,
   updateUserAction,
 } from "@/actions/users";
@@ -19,14 +21,19 @@ type User = {
   active: boolean;
 };
 
+/** Estado del PIN de caja; null = rol administrativo (no usa PIN). */
+type PinStatus = { hasPin: boolean; locked: boolean } | null;
+
 export function UserEditForm({
   user,
   assignableRoles,
   canManage,
+  pin = null,
 }: {
   user: User;
   assignableRoles: Role[];
   canManage: boolean;
+  pin?: PinStatus;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -64,6 +71,21 @@ export function UserEditForm({
     if (res?.error) setError(res.error);
     else {
       setMsg("Contraseña actualizada.");
+      form.reset();
+    }
+  }
+
+  async function onPin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    setError(null);
+    setMsg(null);
+    const formData = new FormData(form);
+    formData.set("id", user.id);
+    const res = await setUserPinAction(formData);
+    if (res?.error) setError(res.error);
+    else {
+      setMsg("PIN guardado.");
       form.reset();
     }
   }
@@ -123,6 +145,62 @@ export function UserEditForm({
           Restablecer contraseña
         </Button>
       </form>
+
+      {pin && (
+        <form onSubmit={onPin} className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[140px] flex-1">
+            <Input
+              label="PIN de caja (4–6 dígitos)"
+              name="pin"
+              type="password"
+              inputMode="numeric"
+              pattern="\d{4,6}"
+              minLength={4}
+              maxLength={6}
+              required
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="min-w-[140px] flex-1">
+            <Input
+              label="Confirmar PIN"
+              name="pinConfirm"
+              type="password"
+              inputMode="numeric"
+              pattern="\d{4,6}"
+              minLength={4}
+              maxLength={6}
+              required
+              autoComplete="new-password"
+            />
+          </div>
+          <Button type="submit" variant="secondary">
+            {pin.hasPin ? "Restablecer PIN" : "Asignar PIN"}
+          </Button>
+          {pin.hasPin && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={async () => {
+                setError(null);
+                setMsg(null);
+                const res = await clearUserPinAction(user.id);
+                if (res?.error) setError(res.error);
+                else setMsg("PIN eliminado.");
+              }}
+            >
+              Quitar PIN
+            </Button>
+          )}
+          <p className="w-full text-xs text-slate-500 dark:text-brand-200/80">
+            {pin.hasPin
+              ? pin.locked
+                ? "PIN bloqueado por intentos fallidos: se desbloquea al iniciar sesión con contraseña o al restablecerlo."
+                : "PIN configurado. Acceso rápido en dispositivos donde este usuario ya inició sesión con contraseña."
+              : "Sin PIN. Solo ingresa con correo y contraseña."}
+          </p>
+        </form>
+      )}
 
       <div className="flex gap-2">
         {user.active ? (

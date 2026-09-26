@@ -12,12 +12,14 @@ import type { Role } from "@/lib/roles";
 import { SessionIdleGuard } from "@/components/session-idle-guard";
 
 export function AppShell({
+  userId,
   userName,
   userRole,
   companyName,
   logoUrl,
   children,
 }: {
+  userId?: string;
   userName: string;
   userRole: Role;
   companyName: string;
@@ -62,7 +64,7 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen bg-cream">
-      <SessionIdleGuard />
+      <SessionIdleGuard userId={userId} />
       {/* Permanent sidebar — visible on md+ (auto) or forced desktop */}
       <div className="app-sidebar-desktop sticky top-0 h-screen shrink-0 self-start">
         <Sidebar

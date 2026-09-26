@@ -109,8 +109,11 @@ export async function middleware(request: NextRequest) {
   if (token) {
     try {
       const { payload } = await jwtVerify(token, getSecret());
-      authenticated = true;
-      role = (payload.role as string) || null;
+      // Solo tokens de sesión (con id); rechaza otros JWT firmados (p. ej. dispositivo).
+      if (typeof payload.id === "string" && payload.id && !payload.aud) {
+        authenticated = true;
+        role = (payload.role as string) || null;
+      }
     } catch {
       authenticated = false;
     }
@@ -120,6 +123,27 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return withCsp(NextResponse.redirect(url), csp);
+  }
+
+  // Sesión rechazada por el servidor (usuario desactivado/rol inválido):
+  // borrar la cookie y mostrar el login en vez de rebotar a /dashboard.
+  if (isLogin && request.nextUrl.searchParams.get("expired") === "1") {
+    const res = withCsp(
+      NextResponse.next({
+        request: {
+          headers: (() => {
+            const h = new Headers(request.headers);
+            h.set("x-pathname", pathname);
+            h.set("x-nonce", nonce);
+            h.set("Content-Security-Policy", csp);
+            return h;
+          })(),
+        },
+      }),
+      csp
+    );
+    if (token) res.cookies.delete(COOKIE_NAME);
+    return res;
   }
 
   if (authenticated && isLogin) {

@@ -13,6 +13,7 @@ import {
   assignableRoles,
   can,
   canManageTargetRole,
+  canUsePin,
   isRole,
   type Role,
 } from "@/lib/roles";
@@ -178,9 +179,19 @@ export async function updateUserAction(formData: FormData) {
     return { error: "Ya existe otro usuario con ese correo." };
   }
 
+  // Roles administrativos nunca usan PIN: al promover, se elimina el PIN.
+  const dropPin = !canUsePin(role) && user.pinHash !== null;
   await prisma.user.update({
     where: { id },
-    data: { name, email, role, active },
+    data: {
+      name,
+      email,
+      role,
+      active,
+      ...(dropPin
+        ? { pinHash: null, pinFailedAttempts: null, pinLockedAt: null }
+        : {}),
+    },
   });
   await writeAudit(
     session,
@@ -218,6 +229,62 @@ export async function setUserPasswordAction(formData: FormData) {
   const passwordHash = await hashPassword(password);
   await prisma.user.update({ where: { id }, data: { passwordHash } });
   await writeAudit(session, "update", "user", id, "Restableció contraseña de usuario");
+  revalidatePath("/users");
+  return { ok: true };
+}
+
+/** Asigna o restablece el PIN de caja (4–6 dígitos) de un cajero. */
+export async function setUserPinAction(formData: FormData) {
+  const session = await assertPermission("users:manage");
+  const id = String(formData.get("id") || "");
+  const pin = String(formData.get("pin") || "").trim();
+  const pinConfirm = String(formData.get("pinConfirm") || "").trim();
+  if (!id) return { error: "Usuario inválido." };
+  if (!/^\d{4,6}$/.test(pin)) {
+    return { error: "El PIN debe tener entre 4 y 6 dígitos." };
+  }
+  if (pin !== pinConfirm) {
+    return { error: "Los PIN no coinciden." };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) return { error: "Usuario no encontrado." };
+  if (!isRole(user.role) || !canManageTargetRole(session.role, user.role)) {
+    return { error: "No puede modificar este usuario." };
+  }
+  if (!canUsePin(user.role)) {
+    return { error: "Los administradores no usan PIN; siempre ingresan con contraseña." };
+  }
+
+  const pinHash = await hashPassword(pin);
+  await prisma.user.update({
+    where: { id },
+    data: { pinHash, pinFailedAttempts: 0, pinLockedAt: null },
+  });
+  await writeAudit(
+    session,
+    "update",
+    "user",
+    id,
+    `${user.pinHash ? "Restableció" : "Asignó"} PIN de caja (${user.email})`
+  );
+  revalidatePath("/users");
+  return { ok: true };
+}
+
+/** Elimina el PIN de caja de un usuario (volverá a usar solo contraseña). */
+export async function clearUserPinAction(id: string) {
+  const session = await assertPermission("users:manage");
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) return { error: "Usuario no encontrado." };
+  if (!isRole(user.role) || !canManageTargetRole(session.role, user.role)) {
+    return { error: "No puede modificar este usuario." };
+  }
+  await prisma.user.update({
+    where: { id },
+    data: { pinHash: null, pinFailedAttempts: null, pinLockedAt: null },
+  });
+  await writeAudit(session, "update", "user", id, `Quitó PIN de caja (${user.email})`);
   revalidatePath("/users");
   return { ok: true };
 }
