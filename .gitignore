@@ -44,3 +44,5 @@ prisma/*.backup
 # uploaded logos (keep folder)
 /public/uploads/*
 !/public/uploads/.gitkeep
+backup-ui-ux/  
+backup-ui-ux.tar.gz 
