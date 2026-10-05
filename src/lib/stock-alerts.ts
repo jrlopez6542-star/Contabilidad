@@ -11,6 +11,7 @@
  */
 
 import { prisma } from "./prisma";
+import type { Product } from "@prisma/client";
 import { appBaseUrl, sendEmail } from "./email";
 import type { PackagingCrossEvent } from "./packaging";
 
@@ -183,11 +184,7 @@ export async function sendManualLowStockAlert(): Promise<{
   error?: string;
   count?: number;
 }> {
-  const products = await prisma.product.findMany({
-    where: { active: true, trackStock: true },
-    orderBy: { stock: "asc" },
-  });
-  const low = products.filter((p) => p.stock <= p.minStock);
+  const low = await prisma.$queryRaw<Product[]>`SELECT * FROM "Product" WHERE "active" = 1 AND "trackStock" = 1 AND "stock" <= "minStock" ORDER BY "stock" ASC`;
   if (low.length === 0) {
     return { ok: false, error: "No hay productos con stock bajo." };
   }
@@ -224,13 +221,8 @@ export async function sendManualLowStockAlert(): Promise<{
   return { ok: true, count: low.length };
 }
 
-/** Active products with trackStock and stock <= minStock (dashboard / alerts). */
 export async function getLowStockProducts() {
-  const products = await prisma.product.findMany({
-    where: { active: true, trackStock: true },
-    orderBy: { stock: "asc" },
-  });
-  return products.filter((p) => p.stock <= p.minStock);
+  return await prisma.$queryRaw<Product[]>`SELECT * FROM "Product" WHERE "active" = 1 AND "trackStock" = 1 AND "stock" <= "minStock" ORDER BY "stock" ASC`;
 }
 
 /** Active C4/C10 packaging supplies at or below their positive minimum. */

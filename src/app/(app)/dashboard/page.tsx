@@ -49,39 +49,44 @@ export default async function DashboardPage() {
   const unpaidCutoff = new Date(now.getTime() - unpaidDays * 24 * 60 * 60 * 1000);
 
   const [
-    issuedThisMonth,
+    salesAgg,
     unpaid,
-    expensesMonth,
+    expenseAgg,
     recentInvoices,
-    customers,
+    customerTopGroups,
     lowStockProducts,
     lowPackagingSupplies,
   ] = await Promise.all([
-      prisma.invoice.findMany({
+      prisma.invoice.aggregate({
         where: {
           status: { in: ["issued", "paid"] },
           issuedAt: { gte: monthStart, lt: monthEnd },
         },
+        _sum: { total: true },
+        _count: { id: true },
       }),
       prisma.invoice.findMany({
         where: { status: "issued" },
         include: { customer: true, payments: true },
         orderBy: { issuedAt: "asc" },
       }),
-      prisma.expense.findMany({
+      prisma.expense.aggregate({
         where: { date: { gte: monthStart, lt: monthEnd } },
+        _sum: { amount: true },
+        _count: { id: true },
       }),
       prisma.invoice.findMany({
         take: 5,
         orderBy: { createdAt: "desc" },
         include: { customer: true },
       }),
-      prisma.customer.findMany({
-        include: {
-          invoices: {
-            where: { status: { in: ["issued", "paid"] } },
-          },
-        },
+      prisma.invoice.groupBy({
+        by: ["customerId"],
+        where: { status: { in: ["issued", "paid"] } },
+        _sum: { total: true },
+        _count: { id: true },
+        orderBy: { _sum: { total: "desc" } },
+        take: 5,
       }),
       getLowStockProducts(),
       getLowPackagingSupplies(),
@@ -90,23 +95,27 @@ export default async function DashboardPage() {
     (i) => i.issuedAt && i.issuedAt < unpaidCutoff
   );
 
-  const salesMonth = issuedThisMonth.reduce((s, i) => s + i.total, 0);
-  const expensesTotal = expensesMonth.reduce((s, e) => s + e.amount, 0);
+  const salesMonth = salesAgg._sum.total ?? 0;
+  const expensesTotal = expenseAgg._sum.amount ?? 0;
   const unpaidTotal = unpaid.reduce((s, i) => {
     const paid = i.payments.reduce((p, x) => p + x.amount, 0);
     return s + Math.max(0, i.total - paid);
   }, 0);
 
-  const topCustomers = customers
-    .map((c) => ({
-      id: c.id,
-      name: c.name,
-      total: c.invoices.reduce((s, i) => s + i.total, 0),
-      count: c.invoices.length,
-    }))
-    .filter((c) => c.total > 0)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
+  const topCustomerDetails = customerTopGroups.length
+    ? await prisma.customer.findMany({
+        where: { id: { in: customerTopGroups.map((g) => g.customerId) } },
+        select: { id: true, name: true },
+      })
+    : [];
+  const customerNameMap = new Map(topCustomerDetails.map((c) => [c.id, c.name]));
+
+  const topCustomers = customerTopGroups.map((g) => ({
+    id: g.customerId,
+    name: customerNameMap.get(g.customerId) || "Cliente",
+    total: g._sum.total ?? 0,
+    count: g._count.id,
+  }));
 
   const monthLabel = new Intl.DateTimeFormat("es-CO", {
     month: "long",
@@ -269,7 +278,7 @@ export default async function DashboardPage() {
         <StatCard
           label="Ventas del mes"
           value={formatCOP(salesMonth)}
-          hint={`${issuedThisMonth.length} factura(s) emitidas/pagadas`}
+          hint={`${salesAgg._count.id} factura(s) emitidas/pagadas`}
         />
         <StatCard
           label="Por cobrar"
@@ -279,7 +288,7 @@ export default async function DashboardPage() {
         <StatCard
           label="Gastos del mes"
           value={formatCOP(expensesTotal)}
-          hint={`${expensesMonth.length} registro(s)`}
+          hint={`${expenseAgg._count.id} registro(s)`}
         />
         <StatCard
           label="Ingresos vs gastos"

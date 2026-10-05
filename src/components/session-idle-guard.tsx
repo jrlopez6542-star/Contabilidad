@@ -3,17 +3,19 @@
 import { useCallback, useEffect, useRef } from "react";
 import { endSessionAction } from "@/actions/auth";
 
-/** Sin actividad: 10 min. Fuera de la pestaña/app: 2 min. */
-const IDLE_MS = 10 * 60 * 1000;
-const HIDDEN_MS = 2 * 60 * 1000;
-const CHECK_EVERY_MS = 15_000;
+/** Sin actividad: 30 min. Fuera de la pestaña/app: 10 min. */
+const IDLE_MS = 30 * 60 * 1000;
+const HIDDEN_MS = 10 * 60 * 1000;
+const CHECK_EVERY_MS = 30_000;
+const THROTTLE_BUMP_MS = 5_000;
 
 /**
  * Cierra la sesión si el usuario deja la app quieta o sale del navegador
- * un rato, y redirige al login.
+ * un rato largo, y redirige al login.
  */
 export function SessionIdleGuard({ userId }: { userId?: string } = {}) {
   const lastActiveRef = useRef(Date.now());
+  const lastBumpCallRef = useRef(0);
   const hiddenAtRef = useRef<number | null>(null);
   const lockingRef = useRef(false);
 
@@ -37,7 +39,11 @@ export function SessionIdleGuard({ userId }: { userId?: string } = {}) {
 
   useEffect(() => {
     const bump = () => {
-      lastActiveRef.current = Date.now();
+      const now = Date.now();
+      if (now - lastBumpCallRef.current > THROTTLE_BUMP_MS) {
+        lastBumpCallRef.current = now;
+        lastActiveRef.current = now;
+      }
     };
 
     const events: (keyof WindowEventMap)[] = [

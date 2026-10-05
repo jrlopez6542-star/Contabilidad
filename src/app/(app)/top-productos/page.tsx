@@ -7,39 +7,47 @@ import Link from "next/link";
 export default async function TopProductosPage() {
   await requirePermission("reports:read");
 
-  const items = await prisma.invoiceItem.findMany({
+  const groups = await prisma.invoiceItem.groupBy({
+    by: ["productId"],
     where: {
       productId: { not: null },
       invoice: { status: { in: ["issued", "paid"] } },
     },
-    select: {
-      productId: true,
-      description: true,
+    _sum: {
       quantity: true,
       lineTotal: true,
-      product: { select: { sku: true, name: true } },
     },
+    orderBy: {
+      _sum: {
+        quantity: "desc",
+      },
+    },
+    take: 30,
   });
 
-  const map = new Map<
-    string,
-    { key: string; label: string; sku: string; qty: number; total: number }
-  >();
+  const productIds = groups
+    .map((g) => g.productId)
+    .filter((id): id is string => Boolean(id));
 
-  for (const row of items) {
-    const key = row.productId || row.description;
-    const existing = map.get(key);
-    const label = row.product?.name || row.description;
-    const sku = row.product?.sku || "—";
-    if (existing) {
-      existing.qty += row.quantity;
-      existing.total += row.lineTotal;
-    } else {
-      map.set(key, { key, label, sku, qty: row.quantity, total: row.lineTotal });
-    }
-  }
+  const products = productIds.length
+    ? await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, name: true, sku: true },
+      })
+    : [];
+  const productMap = new Map(products.map((p) => [p.id, p]));
 
-  const ranked = Array.from(map.values()).sort((a, b) => b.qty - a.qty).slice(0, 30);
+  const ranked = groups.map((g) => {
+    const p = g.productId ? productMap.get(g.productId) : null;
+    return {
+      key: g.productId || "unknown",
+      label: p?.name || "Producto desconocido",
+      sku: p?.sku || "—",
+      qty: g._sum.quantity || 0,
+      total: g._sum.lineTotal || 0,
+    };
+  });
+
   const maxQty = ranked[0]?.qty || 1;
 
   return (

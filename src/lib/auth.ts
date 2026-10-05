@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
@@ -106,7 +107,7 @@ export async function destroySession() {
   cookies().set(COOKIE_NAME, "", cookieOpts(0));
 }
 
-export async function getSession(): Promise<SessionUser | null> {
+export const getSession = cache(async (): Promise<SessionUser | null> => {
   const token = cookies().get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
@@ -128,7 +129,7 @@ export async function getSession(): Promise<SessionUser | null> {
   } catch {
     return null;
   }
-}
+});
 
 export async function requireSession(): Promise<SessionUser> {
   const session = await getSession();

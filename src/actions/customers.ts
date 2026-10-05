@@ -10,17 +10,15 @@ function normalizeNit(nit: string) {
 }
 
 async function findDuplicateNit(nit: string, excludeId?: string) {
-  const nitNorm = normalizeNit(nit);
-  const customers = await prisma.customer.findMany({
+  const normalizedNit = normalizeNit(nit);
+  const existing = await prisma.customer.findFirst({
+    where: { nit: normalizedNit },
     select: { id: true, nit: true },
   });
-  return (
-    customers.find(
-      (c) =>
-        normalizeNit(c.nit) === nitNorm &&
-        (!excludeId || c.id !== excludeId)
-    ) ?? null
-  );
+  if (existing && excludeId && existing.id === excludeId) {
+    return null;
+  }
+  return existing;
 }
 
 export async function createCustomerAction(formData: FormData) {

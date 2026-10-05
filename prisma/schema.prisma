@@ -98,6 +98,8 @@ model Customer {
   updatedAt DateTime  @updatedAt
   invoices  Invoice[]
   quotes    Quote[]
+
+  @@index([nit])
 }
 
 model Invoice {
@@ -117,6 +119,10 @@ model Invoice {
   updatedAt     DateTime      @updatedAt
   items         InvoiceItem[]
   payments      Payment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model InvoiceItem {
@@ -132,6 +138,9 @@ model InvoiceItem {
   lineSubtotal Float
   lineIva      Float
   lineTotal    Float
+
+  @@index([invoiceId])
+  @@index([productId])
 }
 
 model Payment {
@@ -143,6 +152,9 @@ model Payment {
   paidAt    DateTime @default(now())
   notes     String   @default("")
   createdAt DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([paidAt])
 }
 
 model Expense {
@@ -152,6 +164,8 @@ model Expense {
   amount    Float
   notes     String   @default("")
   createdAt DateTime @default(now())
+
+  @@index([date])
 }
 
 model Quote {
@@ -226,7 +240,7 @@ model LoginAttempt {
   success   Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  @@index([email, createdAt])
+  @@index([email, success, createdAt])
 }
 
 model PasswordResetToken {

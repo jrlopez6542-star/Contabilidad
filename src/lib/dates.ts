@@ -23,6 +23,15 @@ export function bogotaDayRange(dateStr: string): { start: Date; end: Date } {
   return { start, end };
 }
 
+const bogotaDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
+  timeZone: "America/Bogota",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 /**
  * Fecha+hora Bogotá sin am/pm (listados auditoría/caja).
  * Distinto de formatDateTime en format.ts (usa hour12).
@@ -32,12 +41,5 @@ export function formatDateTimeBogota(
 ): string {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("es-CO", {
-    timeZone: "America/Bogota",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+  return bogotaDateTimeFormatter.format(d);
 }

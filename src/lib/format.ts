@@ -1,35 +1,41 @@
+const copFormatter = new Intl.NumberFormat("es-CO", {
+  style: "currency",
+  currency: "COP",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
 export function formatCOP(amount: number): string {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return copFormatter.format(amount);
 }
+
+const dateFormatter = new Intl.DateTimeFormat("es-CO", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
 
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("es-CO", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(d);
+  return dateFormatter.format(d);
 }
+
+const dateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
+  timeZone: "America/Bogota",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+});
 
 /** Fecha + hora en zona America/Bogota (ticket térmico / comprobantes). */
 export function formatDateTime(date: Date | string | null | undefined): string {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("es-CO", {
-    timeZone: "America/Bogota",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  }).format(d);
+  return dateTimeFormatter.format(d);
 }
 
 export function formatDateInput(date: Date | string): string {

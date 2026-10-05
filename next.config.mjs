@@ -102,7 +102,7 @@ const nextConfig = {
       },
       {
         source: "/sw.js",
-        headers: [{ key: "Cache-Control", value: STATIC_ASSET_CACHE }],
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
       },
       {
         source: "/manifest.webmanifest",

@@ -10,10 +10,16 @@ export default async function ExpensesPage() {
   await requirePermission("expenses:read");
   const session = await getSession();
   const canWrite = session ? can(session.role, "expenses:write") : false;
-  const expenses = await prisma.expense.findMany({
-    orderBy: { date: "desc" },
-  });
-  const total = expenses.reduce((s, e) => s + e.amount, 0);
+  const [expenses, sumAgg] = await Promise.all([
+    prisma.expense.findMany({
+      orderBy: { date: "desc" },
+      take: 100,
+    }),
+    prisma.expense.aggregate({
+      _sum: { amount: true },
+    }),
+  ]);
+  const total = sumAgg._sum.amount ?? 0;
 
   return (
     <div>

@@ -81,7 +81,7 @@ export function Button({
   };
   return (
     <button
-      className={`inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition disabled:opacity-50 sm:min-h-10 ${styles[variant]} ${className}`}
+      className={`inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand dark:focus-visible:ring-brand-200 sm:min-h-10 ${styles[variant]} ${className}`}
       {...props}
     >
       {children}
@@ -113,7 +113,7 @@ export function LinkButton({
     ghost:
       "bg-transparent text-slate-600 hover:bg-cream-muted dark:text-brand-200 dark:hover:bg-brand-800/60",
   };
-  const cls = `inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition sm:min-h-10 ${styles[variant]} ${className}`;
+  const cls = `inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand dark:focus-visible:ring-brand-200 sm:min-h-10 ${styles[variant]} ${className}`;
   // Next.js <Link> soft-navigates; binary route handlers (PDF/CSV) break and
   // Chrome shows "esta página no funciona". Use a real <a> for downloads.
   if (download || hard) {
