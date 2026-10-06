@@ -81,7 +81,7 @@ export function SettingsMenu({ role }: { role: Role }) {
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-64 max-h-[min(75vh,32rem)] overflow-y-auto rounded-2xl border border-brand/10 bg-surface/95 p-2 shadow-2xl backdrop-blur-md dark:border-brand-200/20 dark:bg-brand-900/95"
+          className="absolute right-0 z-[100] mt-2 w-64 max-h-[min(75vh,32rem)] overflow-y-auto rounded-2xl border border-brand/15 bg-white p-2 shadow-2xl ring-1 ring-black/5 dark:border-brand-200/25 dark:bg-brand-900"
         >
           {sections.map((section, idx) => (
             <div key={section.title} className="py-1">

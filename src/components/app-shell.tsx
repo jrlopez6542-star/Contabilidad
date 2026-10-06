@@ -105,7 +105,7 @@ export function AppShell({
       )}
 
       <main className="flex min-w-0 flex-1 flex-col overflow-auto bg-cream-muted">
-        <header className="sticky top-0 z-30 border-b border-brand/10 bg-cream/95 backdrop-blur dark:border-brand-200/15 dark:bg-cream-muted/95">
+        <header className="sticky top-0 z-40 border-b border-brand/10 bg-cream/95 backdrop-blur dark:border-brand-200/15 dark:bg-cream-muted/95">
           <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
             <button
               type="button"
