@@ -4,7 +4,7 @@ import Link from "next/link";
 import { can, type Role } from "@/lib/roles";
 
 const btnClass =
-  "inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-full border border-brand/15 bg-white/70 text-brand shadow-sm backdrop-blur transition hover:bg-brand-50 hover:opacity-100 opacity-70 dark:border-brand-200/25 dark:bg-brand-800/80 dark:text-brand-100 dark:hover:bg-brand-700";
+  "inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-brand/15 bg-surface text-brand shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:bg-brand-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand dark:border-brand-200/25 dark:bg-brand-800/80 dark:text-brand-100 dark:hover:bg-brand-700";
 
 export function TopProductsButton({ role }: { role: Role }) {
   if (!can(role, "reports:read")) return null;
@@ -17,7 +17,7 @@ export function TopProductsButton({ role }: { role: Role }) {
       className={btnClass}
     >
       <svg
-        className="h-4 w-4"
+        className="h-5 w-5 text-amber-600 dark:text-gold"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"

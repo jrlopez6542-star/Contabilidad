@@ -46,7 +46,7 @@ export function ThemeToggle({
   if (!ready) {
     return (
       <span
-        className={`inline-flex h-8 w-8 shrink-0 rounded-full border border-brand/10 bg-white/60 dark:border-brand-200/20 dark:bg-brand-900/60 ${className}`}
+        className={`inline-flex h-10 w-10 shrink-0 rounded-xl border border-brand/10 bg-white/60 dark:border-brand-200/20 dark:bg-brand-900/60 ${className}`}
         aria-hidden
       />
     );
@@ -61,11 +61,11 @@ export function ThemeToggle({
       onClick={toggle}
       title={label}
       aria-label={label}
-      className={`inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-full border border-brand/15 bg-white/70 text-brand shadow-sm backdrop-blur transition hover:bg-brand-50 hover:opacity-100 opacity-70 dark:border-brand-200/25 dark:bg-brand-800/80 dark:text-brand-100 dark:hover:bg-brand-700 ${className}`}
+      className={`inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-brand/15 bg-surface text-brand shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:bg-brand-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand dark:border-brand-200/25 dark:bg-brand-800/80 dark:text-brand-100 dark:hover:bg-brand-700 ${className}`}
     >
       {isDark ? (
         /* Sun → switch to light */
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+        <svg className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -75,7 +75,7 @@ export function ThemeToggle({
         </svg>
       ) : (
         /* Moon → switch to dark */
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+        <svg className="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

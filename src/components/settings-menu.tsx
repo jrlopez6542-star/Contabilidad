@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { adminNavLinks, type Role } from "@/lib/roles";
 
 const btnClass =
-  "inline-flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-full border border-brand/15 bg-white/70 text-brand shadow-sm backdrop-blur transition hover:bg-brand-50 hover:opacity-100 opacity-70 dark:border-brand-200/25 dark:bg-brand-800/80 dark:text-brand-100 dark:hover:bg-brand-700";
+  "inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-brand/15 bg-surface text-brand shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:bg-brand-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand dark:border-brand-200/25 dark:bg-brand-800/80 dark:text-brand-100 dark:hover:bg-brand-700";
 
 export function SettingsMenu({ role }: { role: Role }) {
   const [open, setOpen] = useState(false);
@@ -46,16 +46,17 @@ export function SettingsMenu({ role }: { role: Role }) {
     <div className="relative" ref={rootRef}>
       <button
         type="button"
-        className={btnClass}
-        title="Ajustes"
-        aria-label="Ajustes"
+        className={`${btnClass} ${open ? "border-brand bg-brand-50 text-brand dark:border-gold dark:bg-brand-800" : ""}`}
+        title="Configuraciones del sistema"
+        aria-label="Configuraciones del sistema"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
         onClick={() => setOpen((v) => !v)}
       >
         <svg
-          className="h-4 w-4"
+          className="h-5 w-5 transition-transform duration-300"
+          style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)" }}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -80,27 +81,32 @@ export function SettingsMenu({ role }: { role: Role }) {
         <div
           id={menuId}
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-56 max-h-[min(70vh,28rem)] overflow-y-auto rounded-xl border border-brand/15 bg-surface py-2 shadow-lg dark:border-brand-200/25 dark:bg-brand-900"
+          className="absolute right-0 z-50 mt-2 w-64 max-h-[min(75vh,32rem)] overflow-y-auto rounded-2xl border border-brand/10 bg-surface/95 p-2 shadow-2xl backdrop-blur-md dark:border-brand-200/20 dark:bg-brand-900/95"
         >
           {sections.map((section, idx) => (
-            <div key={section.title}>
+            <div key={section.title} className="py-1">
               {idx > 0 && (
-                <div className="my-1.5 border-t border-brand/10 dark:border-brand-200/15" />
+                <div className="my-2 border-t border-brand/10 dark:border-brand-200/15" />
               )}
-              <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-brand-200/70">
-                {section.title}
-              </p>
-              {section.links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  role="menuitem"
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2 text-sm text-slate-700 hover:bg-brand-50 dark:text-brand-100 dark:hover:bg-brand-800"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              <div className="flex items-center gap-1.5 px-3 py-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-brand-200/70">
+                  {section.title}
+                </p>
+              </div>
+              <div className="mt-1 space-y-0.5">
+                {section.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    role="menuitem"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-brand/5 hover:text-brand dark:text-brand-100 dark:hover:bg-brand-800 dark:hover:text-gold"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           ))}
         </div>
