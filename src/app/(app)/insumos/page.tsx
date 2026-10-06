@@ -3,17 +3,8 @@ import { requirePermission, getSession } from "@/lib/auth";
 import { can } from "@/lib/roles";
 import { AlertBanner, Card, EmptyState, PageHeader, Table } from "@/components/ui";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { SupplyForm } from "./form";
 import { SupplyEditRow } from "./edit-row";
-
-const PackagingViewer3D = dynamic(
-  () =>
-    import("@/components/3d/packaging-viewer-3d").then(
-      (mod) => mod.PackagingViewer3D
-    ),
-  { ssr: false }
-);
 
 export default async function InsumosPage() {
   await requirePermission("supplies:read");
@@ -29,15 +20,6 @@ export default async function InsumosPage() {
     ["C4", "C10"].includes(s.code)
   );
 
-  const packagingBoxes = supplies
-    .filter((s) => ["C4", "C10"].includes(s.code))
-    .map((s) => ({
-      code: s.code,
-      name: s.name,
-      quantity: s.quantity,
-      minStock: s.minStock,
-    }));
-
   return (
     <div>
       <PageHeader
@@ -48,11 +30,6 @@ export default async function InsumosPage() {
             : "Materias primas e insumos (solo lectura). Las ventas C4*/C10* descuentan empaque C4/C10."
         }
       />
-
-      {/* 3D Interactive Packaging Boxes Viewer */}
-      {packagingBoxes.length > 0 && (
-        <PackagingViewer3D boxes={packagingBoxes} />
-      )}
 
       {lowStockSupplies.length > 0 && (
         <div className="mb-6">

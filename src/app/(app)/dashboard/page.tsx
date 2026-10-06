@@ -23,13 +23,6 @@ import {
   getLowPackagingSupplies,
   getLowStockProducts,
 } from "@/lib/stock-alerts";
-import dynamic from "next/dynamic";
-
-const SalesChart3D = dynamic(
-  () =>
-    import("@/components/3d/sales-chart-3d").then((mod) => mod.SalesChart3D),
-  { ssr: false }
-);
 
 export default async function DashboardPage() {
   await requirePermission("dashboard:read");
@@ -329,15 +322,6 @@ export default async function DashboardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           }
-        />
-      </div>
-
-      {/* 3D Financial Interactive Chart */}
-      <div className="mb-6">
-        <SalesChart3D
-          salesMonth={salesMonth}
-          expensesTotal={expensesTotal}
-          unpaidTotal={unpaidTotal}
         />
       </div>
 
