@@ -78,7 +78,7 @@ export function AppShell({
 
       {/* Mobile slide-over drawer (mounted only when open) */}
       {drawerOpen && (
-        <div className="app-mobile-only fixed inset-0 z-40" role="presentation">
+        <div className="app-mobile-only fixed inset-0 z-50" role="presentation">
           <button
             type="button"
             className="app-drawer-backdrop absolute inset-0 bg-brand/40"
