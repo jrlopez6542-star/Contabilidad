@@ -286,16 +286,34 @@ export default async function DashboardPage() {
           label="Ventas del mes"
           value={formatCOP(salesMonth)}
           hint={`${salesAgg._count.id} factura(s) emitidas/pagadas`}
+          tone="success"
+          icon={
+            <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          }
         />
         <StatCard
           label="Por cobrar"
           value={formatCOP(unpaidTotal)}
           hint={`${unpaid.length} factura(s) pendientes`}
+          tone="warning"
+          icon={
+            <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
         />
         <StatCard
           label="Gastos del mes"
           value={formatCOP(expensesTotal)}
           hint={`${expenseAgg._count.id} registro(s)`}
+          tone="danger"
+          icon={
+            <svg className="h-5 w-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+            </svg>
+          }
         />
         <StatCard
           label="Ingresos vs gastos"
@@ -304,6 +322,12 @@ export default async function DashboardPage() {
             salesMonth - expensesTotal >= 0
               ? "Balance positivo"
               : "Balance negativo"
+          }
+          tone={salesMonth - expensesTotal >= 0 ? "success" : "danger"}
+          icon={
+            <svg className="h-5 w-5 text-brand dark:text-brand-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
           }
         />
       </div>

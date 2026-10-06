@@ -38,7 +38,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-brand/10 bg-surface p-4 shadow-sm dark:border-brand-200/15 dark:shadow-none sm:p-5 ${className}`}
+      className={`rounded-2xl border border-brand/10 bg-surface p-5 shadow-sm transition-all duration-200 hover:shadow-md dark:border-brand-200/15 dark:shadow-none sm:p-6 ${className}`}
     >
       {children}
     </div>
@@ -49,17 +49,45 @@ export function StatCard({
   label,
   value,
   hint,
+  tone = "default",
+  icon,
 }: {
   label: string;
   value: string;
   hint?: string;
+  tone?: "default" | "success" | "danger" | "warning";
+  icon?: ReactNode;
 }) {
+  const tones = {
+    default: "border-brand/10 hover:border-brand/20",
+    success: "border-emerald-500/20 hover:border-emerald-500/35 bg-gradient-to-br from-surface via-surface to-emerald-500/5",
+    danger: "border-jam/20 hover:border-jam/35 bg-gradient-to-br from-surface via-surface to-jam/5",
+    warning: "border-amber-500/20 hover:border-amber-500/35 bg-gradient-to-br from-surface via-surface to-amber-500/5",
+  };
+
   return (
-    <Card>
-      <p className="text-sm font-medium text-slate-500 dark:text-brand-200">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-brand dark:text-brand-100">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-400 dark:text-brand-200/80">{hint}</p>}
-    </Card>
+    <div
+      className={`relative overflow-hidden rounded-2xl border bg-surface p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-brand-200/15 ${tones[tone]}`}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-brand-200">
+          {label}
+        </p>
+        {icon && (
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/5 text-brand dark:bg-brand-800/40 dark:text-brand-100">
+            {icon}
+          </div>
+        )}
+      </div>
+      <p className="mt-3 text-2xl font-black tracking-tight text-slate-900 dark:text-brand-50 sm:text-3xl">
+        {value}
+      </p>
+      {hint && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-brand-200/80">
+          <span>{hint}</span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -245,10 +273,12 @@ export function EmptyState({
 
 export function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="-mx-3 overflow-x-auto overscroll-x-contain rounded-xl border border-brand/10 bg-surface shadow-sm dark:border-brand-200/15 dark:shadow-none sm:mx-0 [-webkit-overflow-scrolling:touch]">
-      <table className="w-full min-w-[40rem] divide-y divide-slate-200 text-sm dark:divide-brand-200/15 sm:min-w-full">
-        {children}
-      </table>
+    <div className="-mx-3 overflow-hidden rounded-2xl border border-brand/10 bg-surface shadow-sm transition-all dark:border-brand-200/15 dark:shadow-none sm:mx-0">
+      <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+        <table className="w-full min-w-[40rem] divide-y divide-slate-100 text-sm dark:divide-brand-200/10 sm:min-w-full [&_tbody_tr]:transition-colors [&_tbody_tr:hover]:bg-brand/5 dark:[&_tbody_tr:hover]:bg-brand-800/30">
+          {children}
+        </table>
+      </div>
     </div>
   );
 }
