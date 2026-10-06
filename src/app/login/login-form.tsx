@@ -17,15 +17,8 @@ import {
   DEFAULT_COMPANY_NAME,
   DEFAULT_LOGO,
 } from "@/lib/branding";
-import dynamic from "next/dynamic";
 import { ViewModeToggle } from "@/components/view-mode-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
-
-const LoginHero3D = dynamic(
-  () =>
-    import("@/components/3d/login-hero-3d").then((mod) => mod.LoginHero3D),
-  { ssr: false }
-);
 
 const REMEMBER_EMAIL_KEY = "contabilidad:remember-email";
 
@@ -158,32 +151,17 @@ export function LoginForm({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cream via-cream-muted to-brand-50 px-4 py-8">
-      <div className="grid w-full max-w-5xl items-center gap-8 lg:grid-cols-2">
-        {/* Left column / 3D Experience on large screens */}
-        <div className="hidden flex-col items-center justify-center lg:flex">
-          <div className="relative h-[440px] w-full max-w-[420px]">
-            <LoginHero3D />
-          </div>
-          <p className="mt-2 text-center text-sm font-medium text-brand dark:text-brand-100">
-            {companyName}
-          </p>
-          <p className="text-center text-xs text-slate-500 dark:text-brand-200">
-            Sistema Comercial · Facturación & Inventario en Tiempo Real
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <CompanyLogo
+            src={logoUrl}
+            alt={companyName}
+            className="mx-auto mb-2 h-32 w-auto max-h-36 object-contain drop-shadow-md sm:h-40 sm:max-h-44"
+          />
+          <p className="mt-1 text-sm text-slate-600 dark:text-brand-200">
+            Facturación · Inventario · COP
           </p>
         </div>
-
-        {/* Right column / Login card */}
-        <div className="mx-auto w-full max-w-md">
-          <div className="mb-6 text-center">
-            <CompanyLogo
-              src={logoUrl}
-              alt={companyName}
-              className="mx-auto mb-2 h-28 w-auto max-h-32 object-contain drop-shadow-md sm:h-36 sm:max-h-40"
-            />
-            <p className="mt-1 text-sm text-slate-600 dark:text-brand-200">
-              Facturación · Inventario · COP
-            </p>
-          </div>
         {cashiers.length > 0 && (
           <Card className="mb-4 border-brand/15 shadow-md">
             {pinUser ? (
@@ -337,7 +315,6 @@ export function LoginForm({
             Sistema interno de gestión comercial
           </p>
         </div>
-      </div>
       </div>
     </div>
   );
