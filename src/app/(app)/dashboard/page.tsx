@@ -23,6 +23,13 @@ import {
   getLowPackagingSupplies,
   getLowStockProducts,
 } from "@/lib/stock-alerts";
+import dynamic from "next/dynamic";
+
+const SalesChart3D = dynamic(
+  () =>
+    import("@/components/3d/sales-chart-3d").then((mod) => mod.SalesChart3D),
+  { ssr: false }
+);
 
 export default async function DashboardPage() {
   await requirePermission("dashboard:read");
@@ -298,6 +305,15 @@ export default async function DashboardPage() {
               ? "Balance positivo"
               : "Balance negativo"
           }
+        />
+      </div>
+
+      {/* 3D Financial Interactive Chart */}
+      <div className="mb-6">
+        <SalesChart3D
+          salesMonth={salesMonth}
+          expensesTotal={expensesTotal}
+          unpaidTotal={unpaidTotal}
         />
       </div>
 
