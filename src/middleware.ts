@@ -92,11 +92,14 @@ export async function middleware(request: NextRequest) {
   const isCronApi = pathname.startsWith("/api/cron/");
   const isBrandingApi =
     pathname === "/api/branding" || pathname.startsWith("/api/branding/");
+  const isInvoiceBotApi =
+    pathname.startsWith("/api/invoices/create-from-order");
   const isPublic =
     isLogin ||
     isForgot ||
     isBrandingApi ||
     isCronApi ||
+    isInvoiceBotApi ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon");
 
