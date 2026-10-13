@@ -93,7 +93,8 @@ export async function middleware(request: NextRequest) {
   const isBrandingApi =
     pathname === "/api/branding" || pathname.startsWith("/api/branding/");
   const isInvoiceBotApi =
-    pathname.startsWith("/api/invoices/create-from-order");
+    pathname.startsWith("/api/invoices/create-from-order") ||
+    pathname.startsWith("/api/invoices/public/");
   const isPublic =
     isLogin ||
     isForgot ||

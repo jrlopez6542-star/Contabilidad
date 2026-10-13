@@ -331,7 +331,8 @@ export async function POST(req: NextRequest) {
       invoiceId: invoice.id,
       total: calculatedTotal,
       customerName: customer.name,
-      invoiceUrl: `${appBaseUrl}/invoices/${invoice.id}`,
+      invoiceUrl: `${appBaseUrl}/api/invoices/public/${invoice.id}`,
+      invoicePdfUrl: `${appBaseUrl}/api/invoices/public/${invoice.id}/pdf`,
     });
   } catch (err: unknown) {
     const errorMsg =
