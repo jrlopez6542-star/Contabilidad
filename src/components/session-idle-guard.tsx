@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useRef } from "react";
 import { endSessionAction } from "@/actions/auth";
 
-/** Sin actividad: 30 min. Fuera de la pestaña/app: 10 min. */
-const IDLE_MS = 30 * 60 * 1000;
+/** Sin actividad en pantalla: 20 min. Fuera de la app / pantalla apagada: 10 min. */
+const IDLE_MS = 20 * 60 * 1000;
 const HIDDEN_MS = 10 * 60 * 1000;
-const CHECK_EVERY_MS = 30_000;
+const CHECK_EVERY_MS = 10_000;
 const THROTTLE_BUMP_MS = 5_000;
 
+const KEY_LAST_ACTIVE = "contabilidad_last_active";
+const KEY_HIDDEN_AT = "contabilidad_hidden_at";
+const KEY_LOGOUT_BROADCAST = "contabilidad_logout_broadcast";
+
 /**
- * Cierra la sesión si el usuario deja la app quieta o sale del navegador
- * un rato largo, y redirige al login.
+ * Cierra la sesión si el usuario deja la app quieta o sale del navegador / PWA
+ * un rato largo, y redirige al login con reemplazo de historial (sin BFcache).
  */
 export function SessionIdleGuard({ userId }: { userId?: string } = {}) {
   const lastActiveRef = useRef(Date.now());
@@ -19,32 +23,106 @@ export function SessionIdleGuard({ userId }: { userId?: string } = {}) {
   const hiddenAtRef = useRef<number | null>(null);
   const lockingRef = useRef(false);
 
-  const lockSession = useCallback(async () => {
-    if (lockingRef.current) return;
-    lockingRef.current = true;
+  const lockSession = useCallback(
+    async (reason: "inactividad" | "seguridad" | "logout" = "inactividad") => {
+      if (lockingRef.current) return;
+      lockingRef.current = true;
+
+      try {
+        localStorage.removeItem(KEY_LAST_ACTIVE);
+        localStorage.removeItem(KEY_HIDDEN_AT);
+      } catch {
+        /* ignore storage */
+      }
+
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch {
+        /* ignore */
+      }
+
+      try {
+        await endSessionAction();
+      } catch {
+        /* ignore */
+      }
+
+      const msg =
+        reason === "seguridad"
+          ? "Sesión cerrada por seguridad al salir de la aplicación."
+          : reason === "logout"
+            ? "Sesión finalizada."
+            : "Sesión cerrada por inactividad. Vuelve a iniciar sesión.";
+
+      // replace evita que el botón 'Atrás' en móviles restaure la vista desde el historial
+      window.location.replace(
+        "/login?razon=" +
+          encodeURIComponent(reason) +
+          "&msg=" +
+          encodeURIComponent(msg) +
+          (userId ? `&u=${encodeURIComponent(userId)}` : "")
+      );
+    },
+    [userId]
+  );
+
+  const checkExpired = useCallback((): boolean => {
+    const now = Date.now();
+    let hiddenAt: number | null = hiddenAtRef.current;
+    let lastActive: number = lastActiveRef.current;
+
     try {
-      await endSessionAction();
+      const storedHidden = localStorage.getItem(KEY_HIDDEN_AT);
+      if (storedHidden) {
+        const val = Number(storedHidden);
+        if (!isNaN(val) && val > 0) hiddenAt = val;
+      }
+      const storedActive = localStorage.getItem(KEY_LAST_ACTIVE);
+      if (storedActive) {
+        const val = Number(storedActive);
+        if (!isNaN(val) && val > 0) lastActive = val;
+      }
     } catch {
-      /* ignore */
+      /* ignore storage */
     }
-    // u=<id>: si es un cajero de confianza en este dispositivo, el login
-    // ofrece desbloquear con PIN en lugar de la contraseña.
-    window.location.href =
-      "/login?razon=inactividad&msg=" +
-      encodeURIComponent(
-        "Sesión cerrada por inactividad. Vuelve a iniciar sesión."
-      ) +
-      (userId ? `&u=${encodeURIComponent(userId)}` : "");
-  }, [userId]);
+
+    if (hiddenAt && now - hiddenAt >= HIDDEN_MS) {
+      void lockSession("seguridad");
+      return true;
+    }
+
+    if (now - lastActive >= IDLE_MS) {
+      void lockSession("inactividad");
+      return true;
+    }
+
+    return false;
+  }, [lockSession]);
 
   useEffect(() => {
+    // 1. Verificación inmediata al montar (cuando la PWA o pestaña se abre/recarga tras haber estado cerrada)
+    if (checkExpired()) return;
+
     const bump = () => {
       const now = Date.now();
       if (now - lastBumpCallRef.current > THROTTLE_BUMP_MS) {
         lastBumpCallRef.current = now;
         lastActiveRef.current = now;
+        hiddenAtRef.current = null;
+        try {
+          localStorage.setItem(KEY_LAST_ACTIVE, String(now));
+          localStorage.removeItem(KEY_HIDDEN_AT);
+        } catch {
+          /* ignore */
+        }
       }
     };
+
+    // Inicializar timestamp actual
+    bump();
 
     const events: (keyof WindowEventMap)[] = [
       "mousemove",
@@ -60,35 +138,54 @@ export function SessionIdleGuard({ userId }: { userId?: string } = {}) {
 
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
-        hiddenAtRef.current = Date.now();
-      } else {
-        const hiddenAt = hiddenAtRef.current;
-        hiddenAtRef.current = null;
-        if (hiddenAt && Date.now() - hiddenAt >= HIDDEN_MS) {
-          void lockSession();
-          return;
+        const now = Date.now();
+        hiddenAtRef.current = now;
+        try {
+          localStorage.setItem(KEY_HIDDEN_AT, String(now));
+          localStorage.setItem(KEY_LAST_ACTIVE, String(now));
+        } catch {
+          /* ignore */
         }
+      } else {
+        if (checkExpired()) return;
         bump();
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
 
     const onPageHide = () => {
-      hiddenAtRef.current = Date.now();
+      const now = Date.now();
+      hiddenAtRef.current = now;
+      try {
+        localStorage.setItem(KEY_HIDDEN_AT, String(now));
+        localStorage.setItem(KEY_LAST_ACTIVE, String(now));
+      } catch {
+        /* ignore */
+      }
     };
     window.addEventListener("pagehide", onPageHide);
 
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted || checkExpired()) return;
+      bump();
+    };
+    window.addEventListener("pageshow", onPageShow);
+
+    const onFocus = () => {
+      if (checkExpired()) return;
+      bump();
+    };
+    window.addEventListener("focus", onFocus);
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === KEY_LOGOUT_BROADCAST) {
+        void lockSession("logout");
+      }
+    };
+    window.addEventListener("storage", onStorage);
+
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "hidden") {
-        const hiddenAt = hiddenAtRef.current ?? Date.now();
-        if (Date.now() - hiddenAt >= HIDDEN_MS) {
-          void lockSession();
-        }
-        return;
-      }
-      if (Date.now() - lastActiveRef.current >= IDLE_MS) {
-        void lockSession();
-      }
+      checkExpired();
     }, CHECK_EVERY_MS);
 
     return () => {
@@ -97,9 +194,12 @@ export function SessionIdleGuard({ userId }: { userId?: string } = {}) {
       }
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("storage", onStorage);
       window.clearInterval(timer);
     };
-  }, [lockSession]);
+  }, [checkExpired, lockSession]);
 
   return null;
 }

@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { adminNavLinks, type Role } from "@/lib/roles";
+import { clientLogout } from "@/lib/client-auth";
 
 const btnClass =
   "inline-flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-brand/15 bg-surface text-brand shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:bg-brand-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand dark:border-brand-200/25 dark:bg-brand-800/80 dark:text-brand-100 dark:hover:bg-brand-700";
 
 export function SettingsMenu({ role }: { role: Role }) {
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const groups = adminNavLinks(role);
@@ -109,6 +111,25 @@ export function SettingsMenu({ role }: { role: Role }) {
               </div>
             </div>
           ))}
+
+          <div className="my-2 border-t border-brand/10 dark:border-brand-200/15" />
+          <div className="py-1">
+            <button
+              type="button"
+              role="menuitem"
+              disabled={loggingOut}
+              onClick={async () => {
+                setLoggingOut(true);
+                await clientLogout();
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-jam hover:bg-jam-50 dark:text-red-400 dark:hover:bg-red-950/40 transition-colors disabled:opacity-50"
+            >
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>{loggingOut ? "Cerrando sesión…" : "Cerrar sesión"}</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

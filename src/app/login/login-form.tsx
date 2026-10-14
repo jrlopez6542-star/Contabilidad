@@ -89,6 +89,8 @@ export function LoginForm({
   // "Recordarme": precarga el último correo guardado en este dispositivo.
   useEffect(() => {
     try {
+      localStorage.removeItem("contabilidad_last_active");
+      localStorage.removeItem("contabilidad_hidden_at");
       setRememberedEmail(localStorage.getItem(REMEMBER_EMAIL_KEY) || "");
     } catch {
       setRememberedEmail("");
@@ -276,9 +278,9 @@ export function LoginForm({
                 key={rememberedEmail === null ? "rem" : "rem-ready"}
                 type="checkbox"
                 name="remember"
-                defaultChecked={!!rememberedEmail}
+                defaultChecked={false}
               />
-              Recordarme en este dispositivo (30 días)
+              Mantener sesión iniciada (7 días)
             </label>
             {idleMsg && !error && !pinUser && (
               <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-brand-800 dark:text-brand-100">

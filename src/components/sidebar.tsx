@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { logoutAction } from "@/actions/auth";
 import { ROLE_LABELS, posNavLinks, type Role } from "@/lib/roles";
 import { CompanyLogo } from "@/components/company-logo";
 import { DEFAULT_COMPANY_NAME } from "@/lib/branding";
+import { clientLogout } from "@/lib/client-auth";
 
 function getNavIcon(href: string) {
   switch (href) {
@@ -66,6 +67,7 @@ export function Sidebar({
   className?: string;
 }) {
   void _unusedLogoUrl;
+  const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
   const links = posNavLinks(userRole);
   const name = companyName || DEFAULT_COMPANY_NAME;
@@ -155,17 +157,22 @@ export function Sidebar({
           </div>
         </div>
 
-        <form action={logoutAction} className="mt-3.5">
+        <div className="mt-3.5">
           <button
-            type="submit"
-            className="flex min-h-10 w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-brand-100 transition-all hover:bg-jam hover:border-jam hover:text-white"
+            type="button"
+            disabled={loggingOut}
+            onClick={async () => {
+              setLoggingOut(true);
+              await clientLogout();
+            }}
+            className="flex min-h-10 w-full touch-manipulation items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-brand-100 transition-all hover:bg-jam hover:border-jam hover:text-white disabled:opacity-50"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Cerrar sesión
+            {loggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
           </button>
-        </form>
+        </div>
       </div>
     </aside>
   );

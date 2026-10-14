@@ -1,5 +1,5 @@
 /* Buñuelandia PWA — basic offline shell cache */
-const CACHE = "bunuelandia-shell-v1";
+const CACHE = "bunuelandia-shell-v2";
 const PRECACHE = [
   "/manifest.webmanifest",
   "/icons/icon-192.png",
@@ -26,9 +26,12 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-  // Never cache API/auth-ish or PDF/ticket
+  // Never cache API/auth, login or PDF/ticket
   if (
     url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/login") ||
+    url.pathname.startsWith("/forgot-password") ||
+    url.pathname.startsWith("/reset-password") ||
     url.pathname.includes("/pdf") ||
     url.pathname.includes("/ticket") ||
     url.pathname.includes("/export")

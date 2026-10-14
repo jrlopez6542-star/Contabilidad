@@ -95,12 +95,14 @@ export async function middleware(request: NextRequest) {
   const isInvoiceBotApi =
     pathname.startsWith("/api/invoices/create-from-order") ||
     pathname.startsWith("/api/invoices/public/");
+  const isAuthApi = pathname.startsWith("/api/auth/");
   const isPublic =
     isLogin ||
     isForgot ||
     isBrandingApi ||
     isCronApi ||
     isInvoiceBotApi ||
+    isAuthApi ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon");
 
@@ -126,7 +128,14 @@ export async function middleware(request: NextRequest) {
   if (!authenticated && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return withCsp(NextResponse.redirect(url), csp);
+    const res = withCsp(NextResponse.redirect(url), csp);
+    res.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
+    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Expires", "0");
+    return res;
   }
 
   // Sesión rechazada por el servidor (usuario desactivado/rol inválido):
@@ -146,7 +155,21 @@ export async function middleware(request: NextRequest) {
       }),
       csp
     );
-    if (token) res.cookies.delete(COOKIE_NAME);
+    if (token) {
+      res.cookies.delete(COOKIE_NAME);
+      res.cookies.set(COOKIE_NAME, "", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 0,
+        expires: new Date(0),
+      });
+    }
+    res.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
     return res;
   }
 
@@ -172,12 +195,21 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set("x-pathname", pathname);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
-  return withCsp(
+  const res = withCsp(
     NextResponse.next({
       request: { headers: requestHeaders },
     }),
     csp
   );
+  if (!isPublic) {
+    res.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
+    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Expires", "0");
+  }
+  return res;
 }
 
 export const config = {

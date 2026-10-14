@@ -28,10 +28,10 @@ const DEVICE_MAX_USERS = 8;
 export const PIN_MAX_FAILURES = 5;
 const PIN_ATTEMPT_PREFIX = "pin:";
 
-/** Session length: 7 days balances UX for caja/mostrador vs re-auth frequency. */
-const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 7;
-/** "Recordarme" en este dispositivo: 30 días. */
-const REMEMBER_MAX_AGE_SEC = 60 * 60 * 24 * 30;
+/** Duración de sesión normal: 12 horas (cubre la jornada laboral y previene sesiones perpetuas en móviles/PWA). */
+const SESSION_MAX_AGE_SEC = 60 * 60 * 12;
+/** "Recordarme" en este dispositivo: 7 días. */
+const REMEMBER_MAX_AGE_SEC = 60 * 60 * 24 * 7;
 
 let warnedWeakSecret = false;
 
@@ -84,6 +84,7 @@ function cookieOpts(maxAge: number) {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge,
+    ...(maxAge === 0 ? { expires: new Date(0) } : {}),
   };
 }
 
@@ -104,6 +105,11 @@ export async function createSession(user: SessionUser, remember = false) {
 }
 
 export async function destroySession() {
+  try {
+    cookies().delete(COOKIE_NAME);
+  } catch {
+    /* ignore */
+  }
   cookies().set(COOKIE_NAME, "", cookieOpts(0));
 }
 
