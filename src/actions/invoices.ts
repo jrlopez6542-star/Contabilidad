@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { assertPermission } from "@/lib/auth";
-import { calcTotals, LineInput, syncNextInvoiceNumber } from "@/lib/invoices";
+import {
+  calcTotals,
+  executeDeleteInvoicesBulk,
+  LineInput,
+  syncNextInvoiceNumber,
+} from "@/lib/invoices";
 import { decreaseStockForItems, restoreStockForItems } from "@/lib/inventory";
 import {
   decreasePackagingForItems,
@@ -325,6 +330,20 @@ export async function deleteVoidInvoiceAction(id: string) {
   revalidatePath("/dashboard");
   revalidatePath("/company");
   redirect("/invoices");
+}
+
+export async function deleteInvoicesBulkAction(ids: string[]) {
+  const session = await assertPermission("invoices:write");
+  const res = await executeDeleteInvoicesBulk(ids, session);
+  if ("ok" in res && res.ok) {
+    revalidatePath("/invoices");
+    revalidatePath("/dashboard");
+    revalidatePath("/company");
+    revalidatePath("/products");
+    revalidatePath("/payments");
+    revalidatePath("/insumos");
+  }
+  return res;
 }
 
 export async function issueInvoiceAction(

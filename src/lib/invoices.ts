@@ -1,5 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
+import { restoreStockForItems } from "./inventory";
+import { restorePackagingForItems } from "./packaging";
+import { writeAudit } from "./audit";
+import type { SessionUser } from "./auth";
 
 export type LineInput = {
   productId?: string | null;
@@ -124,3 +128,103 @@ export async function refreshInvoicePaymentStatus(invoiceId: string) {
   }
   return invoice;
 }
+
+export type BulkDeleteResult =
+  | { ok: true; count: number; numbers: string[] }
+  | { error: string };
+
+export async function executeDeleteInvoicesBulk(
+  ids: string[],
+  session?: SessionUser | null
+): Promise<BulkDeleteResult> {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { error: "No se seleccionó ninguna factura." };
+  }
+
+  const uniqueIds = Array.from(
+    new Set(ids.filter((id) => typeof id === "string" && id.trim().length > 0))
+  ).slice(0, 100);
+
+  if (uniqueIds.length === 0) {
+    return { error: "No se seleccionaron facturas válidas." };
+  }
+
+  try {
+    const { deletedCount, deletedNumbers, nextNumber } =
+      await prisma.$transaction(async (tx) => {
+        const invoices = await tx.invoice.findMany({
+          where: { id: { in: uniqueIds } },
+          include: { items: true, payments: true },
+        });
+
+        if (invoices.length === 0) {
+          throw new Error("No se encontraron facturas para eliminar.");
+        }
+
+        const numbers: string[] = [];
+
+        for (const invoice of invoices) {
+          numbers.push(invoice.number);
+
+          // Si fue emitida o pagada, restaurar inventario, empaques y pagos asociados
+          if (invoice.status === "issued" || invoice.status === "paid") {
+            const stockMeta = {
+              reason: `Eliminación ${invoice.number}`,
+              refType: "invoice" as const,
+              refId: invoice.id,
+              refNumber: invoice.number,
+              userId: session?.id || null,
+              userEmail: session?.email || "",
+            };
+            await restoreStockForItems(tx, invoice.items, stockMeta);
+            await restorePackagingForItems(tx, invoice.items, {
+              reason: `Empaque eliminación ${invoice.number}`,
+              refNumber: invoice.number,
+              userId: session?.id || null,
+              userEmail: session?.email || "",
+            });
+
+            if (invoice.payments.length > 0) {
+              await tx.payment.deleteMany({ where: { invoiceId: invoice.id } });
+            }
+          }
+
+          // Eliminar la factura (cascade borra items)
+          await tx.invoice.delete({ where: { id: invoice.id } });
+        }
+
+        // Sincronizar correlativo de facturas
+        const next = await syncNextInvoiceNumber(tx);
+
+        return {
+          deletedCount: invoices.length,
+          deletedNumbers: numbers,
+          nextNumber: next,
+        };
+      });
+
+    if (session) {
+      await writeAudit(
+        session,
+        "delete",
+        "invoice",
+        "bulk",
+        `Eliminación masiva de ${deletedCount} factura(s): ${deletedNumbers.join(", ")}; contador sincronizado a ${nextNumber}`
+      );
+    }
+
+    return {
+      ok: true,
+      count: deletedCount,
+      numbers: deletedNumbers,
+    };
+  } catch (e) {
+    return {
+      error:
+        e instanceof Error
+          ? e.message
+          : "Error al eliminar las facturas seleccionadas.",
+    };
+  }
+}
+
