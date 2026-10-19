@@ -64,12 +64,17 @@ function CustomerEditFields({
         defaultValue={customer.nit}
       />
       <Input
-        label="Correo"
+        label="Correo electrónico"
         name="email"
         type="email"
         defaultValue={customer.email}
       />
-      <Input label="Teléfono" name="phone" defaultValue={customer.phone} />
+      <Input
+        label="Teléfono / Celular"
+        name="phone"
+        type="tel"
+        defaultValue={customer.phone}
+      />
       <div className="sm:col-span-2">
         <Textarea
           label="Dirección"
@@ -78,8 +83,20 @@ function CustomerEditFields({
           defaultValue={customer.address}
         />
       </div>
-      {error && <p className="text-sm text-jam sm:col-span-2">{error}</p>}
-      <div className="sm:col-span-2">
+      {error && (
+        <div className="rounded-lg border border-jam/20 bg-jam-50 p-2.5 text-xs font-medium text-jam dark:bg-jam/10 sm:col-span-2">
+          {error}
+        </div>
+      )}
+      <div className="flex items-center justify-end gap-2.5 sm:col-span-2 pt-2">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onDone}
+          disabled={pending}
+        >
+          Cancelar
+        </Button>
         <Button type="submit" disabled={pending}>
           {pending ? "Guardando…" : "Guardar cambios"}
         </Button>
@@ -132,33 +149,56 @@ export function CustomerEditRow({
   const { open, setOpen, error, setError, deleting, onDelete } =
     useCustomerActions(customer);
 
+  const initial = (customer.name.trim().charAt(0) || "?").toUpperCase();
+
   return (
     <>
-      <tr>
+      <tr className="hover:bg-brand/5 dark:hover:bg-brand-900/30 transition-colors">
         <td className="px-3 py-3 sm:px-4">
-          <p className="font-medium">{customer.name}</p>
-          {customer.address && (
-            <p className="text-xs text-slate-500">{customer.address}</p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 font-bold text-brand dark:bg-brand-800/40 dark:text-brand-100">
+              {initial}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-900 dark:text-brand-50 truncate">
+                {customer.name}
+              </p>
+            </div>
+          </div>
+        </td>
+        <td className="px-3 py-3 sm:px-4">
+          <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-medium text-slate-700 dark:bg-brand-900/40 dark:text-brand-200">
+            {customer.nit}
+          </span>
+        </td>
+        <td className="px-3 py-3 sm:px-4 text-slate-700 dark:text-brand-100">
+          {customer.phone || <span className="text-slate-400">—</span>}
+        </td>
+        <td className="hidden px-3 py-3 md:table-cell sm:px-4 text-slate-700 dark:text-brand-100">
+          {customer.email || <span className="text-slate-400">—</span>}
+        </td>
+        <td className="hidden lg:table-cell px-3 py-3 sm:px-4 text-xs text-slate-600 dark:text-brand-200">
+          {customer.address || <span className="text-slate-400">—</span>}
+        </td>
+        <td className="px-3 py-3 sm:px-4 text-center">
+          {(customer.invoiceCount ?? 0) > 0 ? (
+            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+              {customer.invoiceCount} factura{(customer.invoiceCount ?? 0) === 1 ? "" : "s"}
+            </span>
+          ) : (
+            <span className="text-xs text-slate-400 dark:text-brand-300/60">0</span>
           )}
-        </td>
-        <td className="px-3 py-3 sm:px-4 font-mono text-xs">{customer.nit}</td>
-        <td className="hidden px-3 py-3 sm:table-cell sm:px-4">
-          {customer.email || "—"}
-        </td>
-        <td className="px-3 py-3 sm:px-4">{customer.phone || "—"}</td>
-        <td className="hidden px-3 py-3 md:table-cell sm:px-4 text-center tabular-nums text-slate-600">
-          {customer.invoiceCount ?? 0}
         </td>
         {canWrite && (
           <td className="px-3 py-3 sm:px-4 text-right">
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => {
                   setOpen((v) => !v);
                   setError(null);
                 }}
-                className="text-xs font-medium text-brand hover:underline"
+                className="rounded-lg px-2.5 py-1 text-xs font-medium text-brand hover:bg-brand-50 dark:hover:bg-brand-900/40"
               >
                 {open ? "Cerrar" : "Editar"}
               </button>
@@ -166,7 +206,7 @@ export function CustomerEditRow({
                 type="button"
                 onClick={onDelete}
                 disabled={deleting}
-                className="text-xs font-medium text-jam hover:underline disabled:opacity-50"
+                className="rounded-lg px-2.5 py-1 text-xs font-medium text-jam hover:bg-jam/10 disabled:opacity-50"
               >
                 {deleting ? "…" : "Eliminar"}
               </button>
@@ -179,11 +219,24 @@ export function CustomerEditRow({
       </tr>
       {canWrite && open && (
         <tr>
-          <td colSpan={canWrite ? 6 : 5} className="bg-slate-50 px-3 py-4 sm:px-4">
-            <CustomerEditFields
-              customer={customer}
-              onDone={() => setOpen(false)}
-            />
+          <td
+            colSpan={canWrite ? 7 : 6}
+            className="bg-slate-50/80 p-4 sm:p-6 dark:bg-brand-900/20"
+          >
+            <div className="rounded-xl border border-brand/10 bg-surface p-4 shadow-sm dark:border-brand-200/15">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-brand dark:text-brand-100">
+                  Editar cliente: {customer.name}
+                </h3>
+                <span className="font-mono text-xs text-slate-400">
+                  NIT: {customer.nit}
+                </span>
+              </div>
+              <CustomerEditFields
+                customer={customer}
+                onDone={() => setOpen(false)}
+              />
+            </div>
           </td>
         </tr>
       )}
@@ -201,37 +254,54 @@ export function CustomerMobileCard({
   const { open, setOpen, error, setError, deleting, onDelete } =
     useCustomerActions(customer);
 
+  const initial = (customer.name.trim().charAt(0) || "?").toUpperCase();
+
   return (
     <div className="rounded-xl border border-brand/10 bg-surface p-4 shadow-sm dark:border-brand-200/15">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-medium text-brand dark:text-brand-100 truncate">
-            {customer.name}
-          </p>
-          <p className="mt-0.5 font-mono text-xs text-slate-600 dark:text-brand-200">
-            {customer.nit}
-          </p>
-          {customer.phone && (
-            <p className="mt-1 text-sm text-slate-600 dark:text-brand-200">
-              {customer.phone}
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 font-bold text-brand dark:bg-brand-800/40 dark:text-brand-100">
+            {initial}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-brand dark:text-brand-100 truncate">
+              {customer.name}
             </p>
-          )}
-          {(customer.invoiceCount ?? 0) > 0 && (
-            <p className="mt-1 text-xs text-slate-500">
-              {customer.invoiceCount} factura
-              {(customer.invoiceCount ?? 0) === 1 ? "" : "s"}
+            <p className="mt-0.5 font-mono text-xs text-slate-600 dark:text-brand-200">
+              NIT: {customer.nit}
             </p>
-          )}
+            {customer.phone && (
+              <p className="mt-1 text-xs text-slate-600 dark:text-brand-200">
+                Tel: {customer.phone}
+              </p>
+            )}
+            {customer.email && (
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-brand-300 truncate">
+                {customer.email}
+              </p>
+            )}
+            {customer.address && (
+              <p className="mt-1 text-xs text-slate-500 italic">
+                {customer.address}
+              </p>
+            )}
+            {(customer.invoiceCount ?? 0) > 0 && (
+              <p className="mt-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                {customer.invoiceCount} factura
+                {(customer.invoiceCount ?? 0) === 1 ? "" : "s"}
+              </p>
+            )}
+          </div>
         </div>
         {canWrite && (
-          <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
             <button
               type="button"
               onClick={() => {
                 setOpen((v) => !v);
                 setError(null);
               }}
-              className="text-xs font-medium text-brand hover:underline"
+              className="rounded-lg px-2 py-1 text-xs font-medium text-brand hover:bg-brand-50"
             >
               {open ? "Cerrar" : "Editar"}
             </button>
@@ -239,7 +309,7 @@ export function CustomerMobileCard({
               type="button"
               onClick={onDelete}
               disabled={deleting}
-              className="text-xs font-medium text-jam hover:underline disabled:opacity-50"
+              className="rounded-lg px-2 py-1 text-xs font-medium text-jam hover:bg-jam/10 disabled:opacity-50"
             >
               {deleting ? "…" : "Eliminar"}
             </button>
