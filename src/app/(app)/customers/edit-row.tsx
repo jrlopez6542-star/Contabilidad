@@ -142,9 +142,15 @@ function useCustomerActions(customer: CustomerListItem) {
 export function CustomerEditRow({
   customer,
   canWrite,
+  isSelected = false,
+  onToggleSelect,
+  selectionDisabled = false,
 }: {
   customer: CustomerListItem;
   canWrite: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
+  selectionDisabled?: boolean;
 }) {
   const { open, setOpen, error, setError, deleting, onDelete } =
     useCustomerActions(customer);
@@ -153,7 +159,30 @@ export function CustomerEditRow({
 
   return (
     <>
-      <tr className="hover:bg-brand/5 dark:hover:bg-brand-900/30 transition-colors">
+      <tr
+        className={`transition-colors ${
+          isSelected
+            ? "bg-brand-50/70 dark:bg-brand-900/40"
+            : "hover:bg-brand/5 dark:hover:bg-brand-900/30"
+        }`}
+      >
+        {canWrite && (
+          <td className="w-10 px-3 py-3 sm:px-4 text-center">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              disabled={selectionDisabled}
+              onChange={onToggleSelect}
+              title={
+                selectionDisabled
+                  ? "No se puede eliminar: tiene facturas asociadas"
+                  : "Seleccionar cliente"
+              }
+              aria-label={`Seleccionar cliente ${customer.name}`}
+              className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand disabled:cursor-not-allowed disabled:opacity-40 dark:border-brand-200/40 dark:bg-brand-900"
+            />
+          </td>
+        )}
         <td className="px-3 py-3 sm:px-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 font-bold text-brand dark:bg-brand-800/40 dark:text-brand-100">
@@ -220,7 +249,7 @@ export function CustomerEditRow({
       {canWrite && open && (
         <tr>
           <td
-            colSpan={canWrite ? 7 : 6}
+            colSpan={canWrite ? 8 : 6}
             className="bg-slate-50/80 p-4 sm:p-6 dark:bg-brand-900/20"
           >
             <div className="rounded-xl border border-brand/10 bg-surface p-4 shadow-sm dark:border-brand-200/15">
@@ -247,9 +276,15 @@ export function CustomerEditRow({
 export function CustomerMobileCard({
   customer,
   canWrite,
+  isSelected = false,
+  onToggleSelect,
+  selectionDisabled = false,
 }: {
   customer: CustomerListItem;
   canWrite: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
+  selectionDisabled?: boolean;
 }) {
   const { open, setOpen, error, setError, deleting, onDelete } =
     useCustomerActions(customer);
@@ -257,9 +292,30 @@ export function CustomerMobileCard({
   const initial = (customer.name.trim().charAt(0) || "?").toUpperCase();
 
   return (
-    <div className="rounded-xl border border-brand/10 bg-surface p-4 shadow-sm dark:border-brand-200/15">
+    <div
+      className={`rounded-xl border p-4 shadow-sm transition-all dark:border-brand-200/15 ${
+        isSelected
+          ? "border-brand bg-brand-50/40 dark:bg-brand-900/30"
+          : "border-brand/10 bg-surface"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
+          {canWrite && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              disabled={selectionDisabled}
+              onChange={onToggleSelect}
+              title={
+                selectionDisabled
+                  ? "No se puede eliminar: tiene facturas asociadas"
+                  : "Seleccionar cliente"
+              }
+              aria-label={`Seleccionar cliente ${customer.name}`}
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand disabled:cursor-not-allowed disabled:opacity-40"
+            />
+          )}
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 font-bold text-brand dark:bg-brand-800/40 dark:text-brand-100">
             {initial}
           </div>
@@ -271,7 +327,7 @@ export function CustomerMobileCard({
               NIT: {customer.nit}
             </p>
             {customer.phone && (
-              <p className="mt-1 text-xs text-slate-600 dark:text-brand-200">
+              <p className="mt-1 text-sm text-slate-600 dark:text-brand-200">
                 Tel: {customer.phone}
               </p>
             )}

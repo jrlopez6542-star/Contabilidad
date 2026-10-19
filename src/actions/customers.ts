@@ -98,3 +98,22 @@ export async function deleteCustomerAction(id: string) {
   revalidatePath("/customers");
   return { ok: true };
 }
+
+import {
+  executeDeleteCustomersBulk,
+  type BulkDeleteCustomersResult,
+} from "@/lib/customers";
+
+export type { BulkDeleteCustomersResult };
+
+export async function deleteCustomersBulkAction(
+  ids: string[]
+): Promise<BulkDeleteCustomersResult> {
+  const session = await assertPermission("customers:write");
+  const res = await executeDeleteCustomersBulk(ids, session);
+  if ("ok" in res && res.ok) {
+    revalidatePath("/customers");
+  }
+  return res;
+}
+
