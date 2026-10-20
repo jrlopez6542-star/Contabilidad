@@ -45,6 +45,17 @@ export async function GET(
     const issueDate = invoice.issuedAt || invoice.createdAt;
     const formattedDate = formatDate(issueDate);
 
+    // Extraer Entrega específica de la orden desde invoice.notes para aislar datos
+    let orderAddress = "";
+    const isWhatsAppOrder = (invoice.notes || "").includes("Pedido WhatsApp:");
+    if (invoice.notes) {
+      const entregaMatch = invoice.notes.match(/(?:^|·\s*)Entrega:\s*([^·]+)/);
+      if (entregaMatch) {
+        orderAddress = entregaMatch[1].trim();
+      }
+    }
+    const displayAddress = isWhatsAppOrder ? orderAddress : (invoice.customer?.address || "");
+
     const itemsHtml = invoice.items
       .map(
         (it) => `
@@ -64,6 +75,11 @@ export async function GET(
     const paymentMethodLabel = invoice.paymentMethod
       ? invoice.paymentMethod.toUpperCase()
       : (invoice.payments[0]?.method || "PAGADO").toUpperCase();
+
+    const isPaid = invoice.status === "paid";
+    const statusBadgeText = isPaid ? "Factura Pagada" : "Factura Emitida";
+    const statusBadgeBg = isPaid ? "#10b981" : "#f59e0b";
+    const totalRowLabel = isPaid ? "TOTAL PAGADO" : "TOTAL A COBRAR";
 
     const html = `<!DOCTYPE html>
 <html lang="es">
@@ -198,7 +214,7 @@ export async function GET(
 <body>
   <div class="container">
     <div class="header">
-      <div class="badge">Factura Pagada</div>
+      <div class="badge" style="background: ${statusBadgeBg};">${statusBadgeText}</div>
       <div class="invoice-num">Factura #${escapeHtml(invoice.number)}</div>
       <div class="company-title">${escapeHtml(companyName)} · NIT ${escapeHtml(companyNit)}</div>
     </div>
@@ -213,10 +229,10 @@ export async function GET(
           <span class="meta-label">Cliente:</span>
           <span class="meta-val">${escapeHtml(invoice.customer?.name || "Cliente General")}</span>
         </div>
-        ${invoice.customer?.address ? `
+        ${displayAddress ? `
         <div class="meta-row">
           <span class="meta-label">Dirección:</span>
-          <span class="meta-val">${escapeHtml(invoice.customer.address)}</span>
+          <span class="meta-val">${escapeHtml(displayAddress)}</span>
         </div>` : ""}
         <div class="meta-row">
           <span class="meta-label">Método de pago:</span>
@@ -232,7 +248,7 @@ export async function GET(
 
       <div class="totals-box">
         <div class="total-row">
-          <span style="font-size: 15px; color: #475569; font-weight: 700;">TOTAL PAGADO</span>
+          <span style="font-size: 15px; color: #475569; font-weight: 700;">${totalRowLabel}</span>
           <span>${formatCOP(invoice.total)}</span>
         </div>
       </div>

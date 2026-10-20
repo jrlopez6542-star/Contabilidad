@@ -10,6 +10,7 @@ export function formatCOP(amount: number): string {
 }
 
 const dateFormatter = new Intl.DateTimeFormat("es-CO", {
+  timeZone: "America/Bogota",
   year: "numeric",
   month: "short",
   day: "numeric",

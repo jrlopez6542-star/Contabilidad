@@ -38,6 +38,37 @@ export async function GET(
       invoice.payments[0]?.method ||
       null;
 
+    // Extraer Entrega y Email específicos de la orden desde invoice.notes
+    let orderAddress = "";
+    let orderEmail = "";
+    const isWhatsAppOrder = (invoice.notes || "").includes("Pedido WhatsApp:");
+    if (invoice.notes) {
+      const entregaMatch = invoice.notes.match(/(?:^|·\s*)Entrega:\s*([^·]+)/);
+      if (entregaMatch) {
+        orderAddress = entregaMatch[1].trim();
+      }
+      const emailMatch = invoice.notes.match(/(?:^|·\s*)Email:\s*([^·]+)/);
+      if (emailMatch) {
+        orderEmail = emailMatch[1].trim();
+      }
+    }
+
+    const party = invoice.customer
+      ? {
+          name: invoice.customer.name,
+          nit: invoice.customer.nit,
+          address: isWhatsAppOrder ? (orderAddress || "") : (invoice.customer.address || ""),
+          email: isWhatsAppOrder ? (orderEmail || "") : (invoice.customer.email || ""),
+          phone: invoice.customer.phone || "",
+        }
+      : {
+          name: "Consumidor Final",
+          nit: "222222222222",
+          address: orderAddress || "",
+          email: orderEmail || "",
+          phone: "",
+        };
+
     const pdf = await buildCommercialPdf({
       title: "FACTURA DE VENTA",
       number: invoice.number,
@@ -45,7 +76,7 @@ export async function GET(
       dateLabel: "Emisión",
       dateValue: invoice.issuedAt || invoice.createdAt,
       company,
-      party: invoice.customer,
+      party,
       partyTitle: "Facturar a:",
       items: invoice.items,
       subtotal: invoice.subtotal,
